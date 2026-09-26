@@ -17,6 +17,13 @@ All are 1080x1920 at 30fps.
 - Starting score: `startScore` in `DROP_GOAL` / `PENALTY` (set to 7 and 10 if you stitch the clips into one match).
 - Palette, kits, pitch layout: same file (`PALETTE`, `KITS`, `PITCH`).
 
+## Making a new clip
+
+- House style, project map and gotchas: `CLAUDE.md` (Claude reads it automatically).
+- Fill in `docs/BRIEF_TEMPLATE.md` and hand it to Claude; the `new-clip` skill (`.claude/skills/new-clip/`) walks through brief, build, stills check and render.
+- The original look reference is `docs/style-reference.png` (for humans only; never used in a clip).
+- Cloud sessions install dependencies automatically via `.claude/hooks/session-start.sh`.
+
 ## Commands
 
 ```bash
