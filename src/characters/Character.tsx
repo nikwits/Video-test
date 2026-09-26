@@ -542,3 +542,13 @@ export const callForBall = (r: Rig, reach: number): Rig => {
   r.handR = [22, -106];
   return r;
 };
+
+// Front view, ball held at the chest in both hands.
+export const holdBallFront = (r: Rig): Rig => {
+  r.elbowL = [-30, -118];
+  r.handL = [-14, -120];
+  r.elbowR = [30, -118];
+  r.handR = [14, -120];
+  r.ball = {x: 0, y: -121, rot: -8};
+  return r;
+};

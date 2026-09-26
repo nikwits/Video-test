@@ -17,7 +17,7 @@ const tickState = (t: number, from: number, to: number, start: number, step: num
 
 export type ScoreTicks = {from: number; to: number; start: number}[];
 
-const Condensed: React.FC<{
+export const Condensed: React.FC<{
   x: number;
   y: number;
   size: number;

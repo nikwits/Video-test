@@ -103,6 +103,35 @@ export const PENALTY = {
   endHoldStart: 7.0,
 };
 
+// ── Intro (5s) ────────────────────────────────────────────────
+export const INTRO = {
+  durationInFrames: 150,
+  questionIn: 0.2, // "NEW TO RUGBY?"
+  leadIn: 0.9, // "HERE ARE THE"
+  fourIn: 1.25, // the big 4
+  waysIn: 1.6, // "WAYS TO SCORE POINTS"
+  chipsIn: 2.3, // the four names pop in, one after another
+  chipGap: 0.22,
+  endHoldStart: 4.0,
+};
+
+// ── Outro (6s) ────────────────────────────────────────────────
+export const OUTRO = {
+  durationInFrames: 180,
+  titleIn: 0.2,
+  rowsIn: 0.6, // first recap row
+  rowGap: 0.4,
+  endHoldStart: 5.0,
+};
+
+// The four ways to score, in the order they're recapped.
+export const SCORES = [
+  {name: 'TRY', points: 5, line: 'Ground it over the try line', icon: 'try'},
+  {name: 'CONVERSION', points: 2, line: 'Kick over the posts after a try', icon: 'conversion'},
+  {name: 'PENALTY', points: 3, line: 'Kick at goal after a foul', icon: 'penalty'},
+  {name: 'DROP GOAL', points: 3, line: 'Drop it, kick it on the bounce', icon: 'drop'},
+] as const;
+
 // Palette, taken from the player reference sheet.
 export const PALETTE = {
   kit: '#0F1113',

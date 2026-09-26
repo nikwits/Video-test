@@ -9,7 +9,9 @@
     "render": "remotion render src/index.ts RugbyTry out/rugby-try.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
     "render:drop-goal": "remotion render src/index.ts DropGoal out/drop-goal.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
     "render:penalty": "remotion render src/index.ts PenaltyKick out/penalty-kick.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
-    "render:all": "npm run render && npm run render:drop-goal && npm run render:penalty"
+    "render:all": "npm run render:intro && npm run render && npm run render:penalty && npm run render:drop-goal && npm run render:outro",
+    "render:intro": "remotion render src/index.ts Intro out/intro.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
+    "render:outro": "remotion render src/index.ts Outro out/outro.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.529",
