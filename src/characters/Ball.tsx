@@ -1,35 +1,20 @@
 import React from 'react';
-import {COLORS} from '../config';
+import {COLORS, PALETTE} from '../config';
 
 // A rugby ball in local units: long axis along x, 19 x 12 half-size.
-// `spinFlatten` squashes the long axis to fake the ball turning end over end.
-export const BallShape: React.FC<{outline?: number; spinFlatten?: number}> = ({
-  outline = 3.5,
-  spinFlatten = 1,
-}) => {
-  const rx = 19 * Math.max(0.64, spinFlatten);
+export const BallShape: React.FC<{outline?: number}> = ({outline = 1.6}) => {
+  const rx = 19;
   const ry = 12;
   return (
     <g>
-      <ellipse rx={rx} ry={ry} fill={COLORS.ball} stroke={COLORS.outline} strokeWidth={outline} />
-      <ellipse cx={-rx * 0.55} rx={rx * 0.1} ry={ry * 0.84} fill={COLORS.ballStripe} />
-      <ellipse cx={rx * 0.55} rx={rx * 0.1} ry={ry * 0.84} fill={COLORS.ballStripe} />
-      <path
-        d={`M${-rx * 0.28},${-ry * 0.42} L${rx * 0.28},${-ry * 0.42}`}
-        stroke={COLORS.outline}
-        strokeWidth={outline * 0.55}
-        strokeLinecap="round"
-      />
-      {[-0.18, -0.06, 0.06, 0.18].map((f) => (
-        <path
-          key={f}
-          d={`M${rx * f},${-ry * 0.56} L${rx * f},${-ry * 0.28}`}
-          stroke={COLORS.outline}
-          strokeWidth={outline * 0.45}
-          strokeLinecap="round"
-        />
-      ))}
-      <ellipse cx={-rx * 0.25} cy={ry * 0.35} rx={rx * 0.28} ry={ry * 0.18} fill="#FFFFFF" opacity={0.7} />
+      <ellipse rx={rx} ry={ry} fill={COLORS.ball} stroke={PALETTE.kit} strokeWidth={outline} />
+      {/* shaded underside */}
+      <path d={`M${-rx * 0.92},${ry * 0.3} Q0,${ry * 1.25} ${rx * 0.92},${ry * 0.3} Q0,${ry * 0.8} ${-rx * 0.92},${ry * 0.3} Z`} fill="#C9CDD3" />
+      {/* panel graphics */}
+      <path d={`M${-rx * 0.62},${-ry * 0.8} Q${-rx * 0.4},0 ${-rx * 0.62},${ry * 0.8}`} stroke={COLORS.ballStripe} strokeWidth={ry * 0.22} fill="none" />
+      <path d={`M${rx * 0.62},${-ry * 0.8} Q${rx * 0.4},0 ${rx * 0.62},${ry * 0.8}`} stroke={COLORS.ballStripe} strokeWidth={ry * 0.22} fill="none" />
+      <path d={`M${-rx * 0.3},${-ry * 0.3} L${rx * 0.3},${-ry * 0.3}`} stroke={PALETTE.shadow} strokeWidth={outline * 0.7} strokeLinecap="round" />
+      <ellipse rx={rx} ry={ry} fill="none" stroke={PALETTE.kit} strokeWidth={outline} />
     </g>
   );
 };

@@ -1,10 +1,10 @@
 import React from 'react';
 import {Easing, interpolate} from 'remotion';
-import {COLORS} from '../config';
+import {COLORS, PALETTE} from '../config';
 
-const FONT = "'DejaVu Sans', 'Arial Black', Arial, sans-serif";
-const INK = COLORS.outline;
-
+// No condensed font ships with the container, so squeeze a bold sans instead.
+export const FONT = "'Liberation Sans', Arial, Helvetica, sans-serif";
+const INK = PALETTE.kit;
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 
 // Counts up one number at a time: from, from+1, ... to.
@@ -17,26 +17,41 @@ const tickState = (t: number, from: number, to: number, start: number, step: num
 
 export type ScoreTicks = {from: number; to: number; start: number}[];
 
+const Condensed: React.FC<{
+  x: number;
+  y: number;
+  size: number;
+  fill: string;
+  children: React.ReactNode;
+  anchor?: 'start' | 'middle' | 'end';
+  squeeze?: number;
+}> = ({x, y, size, fill, children, anchor = 'middle', squeeze = 0.82}) => (
+  <g transform={`translate(${x},${y}) scale(${squeeze},1)`}>
+    <text textAnchor={anchor} fontFamily={FONT} fontWeight={700} fontSize={size} fill={fill}>
+      {children}
+    </text>
+  </g>
+);
+
 export const Scoreboard: React.FC<{
   t: number;
   ticks: ScoreTicks;
   step: number;
   pulse: number; // 0..1, how big the celebration pulse is right now
 }> = ({t, ticks, step, pulse}) => {
-  // Find the latest tick range that has started.
   let state = {value: ticks[0]?.from ?? 0, since: Infinity, landed: false};
   for (const r of ticks) {
     if (t >= r.start) state = tickState(t, r.from, r.to, r.start, step);
   }
-  const pop = interpolate(state.since, [0, 0.07, 0.22], [1.55, 1.2, 1], {...clamp, easing: Easing.out(Easing.cubic)});
-  const slide = interpolate(state.since, [0, 0.14], [34, 0], {...clamp, easing: Easing.out(Easing.back(2))});
-  const flash = state.landed ? interpolate(state.since, [0, 0.45], [1, 0], {...clamp, easing: Easing.out(Easing.quad)}) : 0;
+  const pop = interpolate(state.since, [0, 0.07, 0.22], [1.35, 1.12, 1], {...clamp, easing: Easing.out(Easing.cubic)});
+  const slide = interpolate(state.since, [0, 0.14], [26, 0], {...clamp, easing: Easing.out(Easing.back(1.6))});
+  const flash = state.landed ? interpolate(state.since, [0, 0.5], [1, 0], {...clamp, easing: Easing.out(Easing.quad)}) : 0;
 
-  const W = 800;
-  const H = 136;
+  const W = 760;
+  const H = 118;
   const X = (1080 - W) / 2;
-  const Y = 206;
-  const scale = 1 + 0.07 * pulse;
+  const Y = 212;
+  const scale = 1 + 0.05 * pulse;
   const clockSecs = 78 * 60 + 41 + Math.floor(t);
   const clock = `${Math.floor(clockSecs / 60)}:${String(clockSecs % 60).padStart(2, '0')}`;
 
@@ -44,25 +59,16 @@ export const Scoreboard: React.FC<{
     <g>
       <rect
         x={x}
-        y={Y + 16}
-        width={124}
-        height={H - 32}
-        rx={18}
-        fill={live && flash > 0 ? mix('#FFFFFF', COLORS.yellow, flash) : '#FFFFFF'}
-        stroke={INK}
-        strokeWidth={6}
+        y={Y + 14}
+        width={110}
+        height={H - 28}
+        rx={10}
+        fill={live && flash > 0 ? mix(PALETTE.white, PALETTE.accent, flash) : PALETTE.white}
       />
-      <g transform={`translate(${x + 62},${Y + H / 2 + (live ? slide : 0)}) scale(${live ? pop : 1})`}>
-        <text
-          y={30}
-          textAnchor="middle"
-          fontFamily={FONT}
-          fontWeight={900}
-          fontSize={88}
-          fill={INK}
-        >
+      <g transform={`translate(${x + 55},${Y + H / 2 + (live ? slide : 0)}) scale(${live ? pop : 1})`}>
+        <Condensed x={0} y={27} size={78} fill={INK}>
           {value}
-        </text>
+        </Condensed>
       </g>
     </g>
   );
@@ -71,33 +77,29 @@ export const Scoreboard: React.FC<{
     <g transform={`translate(540,${Y + H / 2}) scale(${scale}) translate(-540,${-(Y + H / 2)})`}>
       {pulse > 0 && (
         <rect
-          x={X - 22 * pulse}
-          y={Y - 22 * pulse}
-          width={W + 44 * pulse}
-          height={H + 44 * pulse}
-          rx={48}
-          fill={COLORS.yellow}
-          opacity={0.55 * pulse}
+          x={X - 16 * pulse}
+          y={Y - 16 * pulse}
+          width={W + 32 * pulse}
+          height={H + 32 * pulse}
+          rx={30}
+          fill={PALETTE.accent}
+          opacity={0.45 * pulse}
         />
       )}
-      <rect x={X} y={Y + 10} width={W} height={H} rx={34} fill="#000000" opacity={0.25} />
-      <rect x={X} y={Y} width={W} height={H} rx={34} fill={INK} stroke="#FFFFFF" strokeWidth={6} />
-      {/* home */}
-      <rect x={X + 14} y={Y + 14} width={318} height={H - 28} rx={22} fill={COLORS.blue} />
-      <text x={X + 104} y={Y + H / 2 + 17} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={46} fill="#FFFFFF">
-        BLUES
-      </text>
-      {scoreBox(X + 196, state.value, true)}
-      {/* away */}
-      <rect x={X + W - 332} y={Y + 14} width={318} height={H - 28} rx={22} fill={COLORS.red} />
-      <text x={X + W - 104} y={Y + H / 2 + 17} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={46} fill="#FFFFFF">
-        REDS
-      </text>
-      {scoreBox(X + W - 320, 0, false)}
-      {/* clock */}
-      <text x={540} y={Y + H / 2 + 13} textAnchor="middle" fontFamily={FONT} fontWeight={700} fontSize={36} fill="#FFFFFF">
+      <rect x={X} y={Y + 8} width={W} height={H} rx={18} fill="#000000" opacity={0.35} />
+      <rect x={X} y={Y} width={W} height={H} rx={18} fill={INK} stroke={PALETTE.shadow} strokeWidth={3} />
+      <rect x={X + 16} y={Y + 26} width={6} height={H - 52} rx={3} fill={PALETTE.accent} />
+      <Condensed x={X + 40} y={Y + H / 2 + 15} size={44} fill={PALETTE.white} anchor="start">
+        HOME
+      </Condensed>
+      {scoreBox(X + 176, state.value, true)}
+      <Condensed x={X + W - 40} y={Y + H / 2 + 15} size={44} fill={PALETTE.mid} anchor="end">
+        AWAY
+      </Condensed>
+      {scoreBox(X + W - 286, 0, false)}
+      <Condensed x={540} y={Y + H / 2 + 12} size={34} fill={PALETTE.mid}>
         {clock}
-      </text>
+      </Condensed>
     </g>
   );
 };
@@ -108,68 +110,56 @@ function mix(a: string, b: string, t: number) {
   return `rgb(${pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(',')})`;
 }
 
-// Chunky cartoon text with a thick outline and a drop shadow.
-export const PopText: React.FC<{
+// Big headline word: bold, slightly italic, clean outline and a soft drop shadow.
+export const Headline: React.FC<{
   text: string;
   x: number;
   y: number;
   size: number;
   fill: string;
   scale: number;
-  rotate?: number;
-  shadow?: string;
-}> = ({text, x, y, size, fill, scale, rotate = 0, shadow = COLORS.blue}) => (
-  <g transform={`translate(${x},${y}) rotate(${rotate}) scale(${scale})`}>
-    <text
-      x={size * 0.05}
-      y={size * 0.39}
-      textAnchor="middle"
-      fontFamily={FONT}
-      fontWeight={900}
-      fontSize={size}
-      fill={shadow}
-      stroke={INK}
-      strokeWidth={size * 0.09}
-      strokeLinejoin="round"
-      paintOrder="stroke"
-    >
-      {text}
-    </text>
-    <text
-      y={size * 0.34}
-      textAnchor="middle"
-      fontFamily={FONT}
-      fontWeight={900}
-      fontSize={size}
-      fill={fill}
-      stroke={INK}
-      strokeWidth={size * 0.09}
-      strokeLinejoin="round"
-      paintOrder="stroke"
-    >
-      {text}
-    </text>
+  underline?: number; // 0..1 wipe-in of the bar underneath
+}> = ({text, x, y, size, fill, scale, underline = 0}) => (
+  <g transform={`translate(${x},${y}) scale(${scale})`}>
+    <g transform="skewX(-8)">
+      <g opacity={0.45} transform={`translate(${size * 0.03},${size * 0.05})`}>
+        <Condensed x={0} y={size * 0.36} size={size} fill="#000000" squeeze={0.86}>
+          {text}
+        </Condensed>
+      </g>
+      <g transform={`translate(0,${size * 0.36}) scale(0.86,1)`}>
+        <text
+          textAnchor="middle"
+          fontFamily={FONT}
+          fontWeight={700}
+          fontSize={size}
+          fill={fill}
+          stroke={INK}
+          strokeWidth={size * 0.035}
+          strokeLinejoin="round"
+          paintOrder="stroke"
+        >
+          {text}
+        </text>
+      </g>
+      {underline > 0 && (
+        <rect x={(-size * 1.1) / 2} y={size * 0.5} width={size * 1.1 * underline} height={size * 0.07} fill={PALETTE.white} />
+      )}
+    </g>
   </g>
 );
 
-export const Starburst: React.FC<{x: number; y: number; r: number; spikes: number; rotate: number; fill: string; scale: number}> = ({
-  x,
-  y,
-  r,
-  spikes,
-  rotate,
-  fill,
-  scale,
-}) => {
-  const pts: string[] = [];
-  for (let i = 0; i < spikes * 2; i++) {
-    const a = (i / (spikes * 2)) * Math.PI * 2;
-    const rr = i % 2 ? r * 0.72 : r;
-    pts.push(`${(Math.cos(a) * rr).toFixed(1)},${(Math.sin(a) * rr).toFixed(1)}`);
-  }
+// A small dark pill with a lime edge: "+5", "+2".
+export const Tag: React.FC<{text: string; x: number; y: number; size: number; scale: number}> = ({text, x, y, size, scale}) => {
+  const w = size * 1.7;
+  const h = size * 1.05;
   return (
-    <g transform={`translate(${x},${y}) rotate(${rotate}) scale(${scale})`}>
-      <polygon points={pts.join(' ')} fill={fill} stroke={INK} strokeWidth={10} strokeLinejoin="round" />
+    <g transform={`translate(${x},${y}) scale(${scale})`}>
+      <rect x={-w / 2} y={-h / 2 + 6} width={w} height={h} rx={h / 2} fill="#000000" opacity={0.35} />
+      <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2} fill={INK} stroke={COLORS.accent} strokeWidth={size * 0.06} />
+      <Condensed x={0} y={size * 0.35} size={size} fill={PALETTE.white}>
+        {text}
+      </Condensed>
     </g>
   );
 };

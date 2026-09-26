@@ -9,15 +9,16 @@ import {
   Rig,
   armsUp,
   kickBack,
+  reachUp,
   runBack,
   runFront,
   standBack,
   standFront,
 } from './characters/Character';
 import {DIVER_LENGTH, Diver} from './characters/Diver';
-import {Backdrop, Posts} from './scene/World';
-import {Confetti, DizzyStars, Dust, Impact, Sparkle, SpeedLines, Wipe} from './scene/Effects';
-import {PopText, Scoreboard, Starburst} from './scene/Hud';
+import {Backdrop, Posts, Vignette} from './scene/World';
+import {Confetti, Dust, Impact, Sparkle, SpeedLines, Wipe} from './scene/Effects';
+import {Headline, Scoreboard, Tag} from './scene/Hud';
 
 // ── helpers ──────────────────────────────────────────────────
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
@@ -26,7 +27,7 @@ const ease = (t: number, t0: number, t1: number, v0: number, v1: number, e: (x: 
 const bump = (t: number, t0: number, t1: number) => (t <= t0 || t >= t1 ? 0 : Math.sin(((t - t0) / (t1 - t0)) * Math.PI));
 const UNIT = CHAR_SCALE / 100; // metres per sprite unit
 const BALL_UNIT = (0.29 * BALL_SCALE) / 38; // metres per ball-sprite unit
-const FLIGHT_BOOST = 2.1; // ball drawn bigger in the air so it reads at a distance
+const FLIGHT_BOOST = 2.5; // ball drawn bigger in the air so it reads at a distance
 
 const SWAP_TO_CONVERSION = T.wipeToConversion + T.wipeDuration / 2;
 const SWAP_TO_CELEBRATION = T.wipeToCelebration + T.wipeDuration / 2;
@@ -109,7 +110,8 @@ const runCamera = (t: number): Camera => {
   const swing = ease(t, T.diveCameraSwing, T.diveCameraSwingEnd, 0, 1, Easing.inOut(Easing.cubic));
   const x = playerX(Math.max(0, t - 0.1)) * (0.85 + 0.15 * swing);
   const target: Vec3 = {x, y: 1.1 - 0.6 * swing, z: hip + 0.3 * swing};
-  const cam = orbit(target, DIVE_YAW * swing, 6.2 + 1.0 * k + 2.3 * swing, 3.2 + 1.3 * k + 0.5 * swing, 1080 - 20 * swing);
+  const cam = orbit(target, DIVE_YAW * swing, 5.8 + 1.0 * k + 2.3 * swing, 3.2 + 1.3 * k + 0.5 * swing, 1080 - 20 * swing);
+  cam.focal = 1600 + 420 * swing; // tighten up on the dive
   // punchy shake when the ball goes down
   const since = t - T.touchdown;
   if (since > 0 && since < 0.6) {
@@ -175,7 +177,7 @@ const RunScene: React.FC<{t: number}> = ({t}) => {
       const fade = ease(w, 0.15, 0.55, 1, 0, Easing.in(Easing.quad));
       const reach = ease(w, 0, 0.3, 0.2, 1, Easing.out(Easing.cubic));
       shadows.push(
-        <g key="whoosh" opacity={fade} stroke="#FFFFFF" strokeWidth={10} strokeLinecap="round" fill="none">
+        <g key="whoosh" opacity={fade} stroke="#FFFFFF" strokeWidth={4} strokeOpacity={0.6} strokeLinecap="round" fill="none">
           {[-60, 0, 60].map((dy, i) => (
             <path key={i} d={`M${p.x + 90},${p.y + dy} q${110 * reach},${-20} ${220 * reach},${i * 12}`} />
           ))}
@@ -228,10 +230,7 @@ const RunScene: React.FC<{t: number}> = ({t}) => {
     const r = lungeT > 0 ? armsUp(runFront(0.4, 1), 0) : runFront((dist / 2.6) * Math.PI * 2, 1);
     if (lungeT > 0) {
       // arms reaching out towards where the player *was*
-      r.elbowL = [-30, -150];
-      r.handL = [-26, -180];
-      r.elbowR = [30, -150];
-      r.handR = [26, -180];
+      reachUp(r);
       d1rot = ease(lungeT, 0, 0.36, 0, -90, Easing.in(Easing.quad));
       const land = lungeT - 0.36;
       if (land > 0) {
@@ -239,7 +238,7 @@ const RunScene: React.FC<{t: number}> = ({t}) => {
         d1sy = 1 + 0.08 * sq;
         d1sx = 1 - 0.12 * sq;
       }
-      d1expr = land > 0.1 ? 'dizzy' : 'shock';
+      d1expr = land > 0.1 ? 'dazed' : 'shock';
     }
     d1 = <Character rig={r} kit={KITS.away} view="front" expr={d1expr} />;
   }
@@ -248,13 +247,6 @@ const RunScene: React.FC<{t: number}> = ({t}) => {
   if (lungeT > 0.35) {
     const land = project({x: d1x - 1.2, y: 0.1, z: d1z}, cam);
     shadows.push(<Dust key="d1dust" x={land.x} y={land.y} since={lungeT - 0.36} size={land.s * 0.9} seed="d1" />);
-  }
-  if (lungeT > 0.5) {
-    const head = project({x: d1x - 157 * UNIT, y: 0.55, z: d1z}, cam);
-    items.push({
-      depth: head.depth - 0.01,
-      node: <DizzyStars key="dz" x={head.x} y={head.y} t={t} r={head.s * 0.45} opacity={ease(lungeT, 0.5, 0.7, 0, 1)} />,
-    });
   }
 
   // ── defender 2: cover tackler, arrives too late ──
@@ -274,10 +266,7 @@ const RunScene: React.FC<{t: number}> = ({t}) => {
       cx -= ease(diveT, 0, 0.34, 0, 0.9, Easing.out(Easing.quad));
       cz -= ease(diveT, 0, 0.4, 0, 0.5, Easing.out(Easing.quad));
       rig = runFront(0, 0);
-      rig.elbowL = [-30, -150];
-      rig.handL = [-24, -182];
-      rig.elbowR = [30, -150];
-      rig.handR = [24, -182];
+      reachUp(rig);
       expr = 'shock';
     }
     items.push(sprite('d2', {x: cx, y: 0, z: cz}, cam, <Character rig={rig} kit={KITS.away2} view="front" expr={expr} />, {rotate: rot}));
@@ -389,7 +378,7 @@ const ConversionScene: React.FC<{t: number}> = ({t}) => {
     depth: teeP.depth + 0.05,
     node: (
       <g key="tee" transform={`translate(${teeP.x},${teeP.y}) scale(${teeP.s * UNIT})`}>
-        <path d="M-16,0 L-8,-18 L8,-18 L16,0 Z" fill={COLORS.tee} stroke={COLORS.outline} strokeWidth={3.5} strokeLinejoin="round" />
+        <path d="M-16,0 L-8,-18 L8,-18 L16,0 Z" fill={COLORS.tee} stroke={COLORS.outline} strokeWidth={1.2} strokeLinejoin="round" />
       </g>
     ),
   });
@@ -407,7 +396,7 @@ const ConversionScene: React.FC<{t: number}> = ({t}) => {
       const tt = t - i * 0.028;
       if (tt < T.kickAt) break;
       const q = project(ballPos(tt), cam);
-      trail.push(<circle key={i} cx={q.x} cy={q.y} r={Math.max(5, q.s * 0.14) * (1 - i / 20)} fill="#FFFFFF" stroke={COLORS.outline} strokeWidth={2} opacity={0.85 * (1 - i / 15)} />);
+      trail.push(<circle key={i} cx={q.x} cy={q.y} r={Math.max(5, q.s * 0.14) * (1 - i / 20)} fill="#FFFFFF" opacity={0.6 * (1 - i / 15)} />);
     }
   }
   items.push({
@@ -416,7 +405,7 @@ const ConversionScene: React.FC<{t: number}> = ({t}) => {
       <g key="ball">
         {trail}
         <g transform={`translate(${b.x},${b.y}) rotate(${-90 + spin}) scale(${bk})`}>
-          <BallShape outline={3.5 / Math.max(0.5, Math.min(2, bk))} />
+          <BallShape outline={1.6 / Math.max(0.5, Math.min(2, bk))} />
         </g>
       </g>
     ),
@@ -437,10 +426,6 @@ const ConversionScene: React.FC<{t: number}> = ({t}) => {
   const celebrate = T.ballOverPosts + 0.08;
   if (t < T.runUpStart) {
     rig = standBack(0.5 + 0.5 * Math.sin(t * 5), false);
-    rig.elbowL = [-44, -98];
-    rig.handL = [-40, -76];
-    rig.elbowR = [44, -98];
-    rig.handR = [40, -76];
     sy = 1 + 0.015 * Math.sin(t * 5);
   } else if (t < kickStart) {
     const phase = ru * Math.PI * 2 * 2.1;
@@ -474,10 +459,10 @@ const ConversionScene: React.FC<{t: number}> = ({t}) => {
     <g>
       <Backdrop cam={cam} t={t} cheer={cheer} />
       <g opacity={gFade}>
-        <path d={guide.join('')} fill={COLORS.yellow} />
+        <path d={guide.join('')} fill={COLORS.accent} />
         {g0 > 0 && (
           <g transform={`translate(0,0)`}>
-            <path d={polyPath(spotRing, cam)} fill="none" stroke={COLORS.yellow} strokeWidth={6 * spotPulse} />
+            <path d={polyPath(spotRing, cam)} fill="none" stroke={COLORS.accent} strokeWidth={6 * spotPulse} />
           </g>
         )}
       </g>
@@ -523,7 +508,7 @@ const CelebrationScene: React.FC<{t: number}> = ({t}) => {
   rig.handL = [rig.handL[0] - pump * 0.3, rig.handL[1] - pump];
   rig.handR = [rig.handR[0] + pump * 0.3, rig.handR[1] - pump];
   const sx = 1 / Math.sqrt(sy);
-  items.push(sprite('hero', {x: HERO.x, y: lift, z: HERO.z}, cam, <Character rig={rig} kit={KITS.home} view="front" expr="joy" fists />, {sx, sy}));
+  items.push(sprite('hero', {x: HERO.x, y: lift, z: HERO.z}, cam, <Character rig={rig} kit={KITS.home} view="front" expr="joy" />, {sx, sy}));
   const cheer = ease(t, T.celebrateStart, T.celebrateStart + 0.3, 0, 1) * ease(t, T.endHoldStart - 0.5, T.endHoldStart, 1, 0);
 
   return (
@@ -550,11 +535,12 @@ export const RugbyTry: React.FC = () => {
 
   // TRY! +5
   const showTry = t >= T.tryTextIn && t < SWAP_TO_CONVERSION;
-  const tryPop = popIn(frame, T.tryTextIn);
-  const fivePop = popIn(frame, T.plusFiveIn, 8);
+  const tryPop = popIn(frame, T.tryTextIn, 13);
+  const fivePop = popIn(frame, T.plusFiveIn, 12);
+  const underline = ease(t, T.tryTextIn + 0.1, T.tryTextIn + 0.45, 0, 1, Easing.out(Easing.cubic));
   // +2 near the posts
   const showTwo = t >= T.plusTwoIn && t < SWAP_TO_CELEBRATION;
-  const twoPop = popIn(frame, T.plusTwoIn, 8);
+  const twoPop = popIn(frame, T.plusTwoIn, 12);
   const twoRise = ease(t, T.plusTwoIn, T.plusTwoIn + 0.6, 0, -40, Easing.out(Easing.cubic));
 
   // scoreboard pulse on 7
@@ -571,26 +557,25 @@ export const RugbyTry: React.FC = () => {
           {x: 540, y: 400, d: 0.7},
         ].map((s, i) => {
           const k = Math.max(0, Math.sin((t - T.pulseStart) * 5 + s.d * 6)) * ease(t, T.endHoldStart - 0.4, T.endHoldStart, 1, 0);
-          return <Sparkle key={i} x={s.x} y={s.y} size={34 * k} color={i % 2 ? '#FFFFFF' : COLORS.yellow} rotate={t * 40} />;
+          return <Sparkle key={i} x={s.x} y={s.y} size={34 * k} color={i % 2 ? '#FFFFFF' : COLORS.accent} rotate={t * 40} />;
         })
       : null;
 
   return (
-    <AbsoluteFill style={{backgroundColor: COLORS.skyTop}}>
+    <AbsoluteFill style={{backgroundColor: COLORS.skyBottom}}>
       <svg width={VIDEO.width} height={VIDEO.height} viewBox={`0 0 ${VIDEO.width} ${VIDEO.height}`}>
         {scene}
+        <Vignette />
 
         {showTry && (
           <g>
-            <Starburst x={540} y={610} r={250} spikes={14} rotate={t * 25} fill="#FFFFFF" scale={tryPop} />
-            <PopText text="TRY!" x={540} y={590} size={200} fill={COLORS.yellow} scale={tryPop} rotate={-7 + 3 * tryPop} />
-            {t >= T.plusFiveIn && <PopText text="+5" x={790} y={800} size={120} fill="#FFFFFF" scale={fivePop} rotate={8} />}
+            <Headline text="TRY!" x={540} y={560} size={250} fill={COLORS.accent} scale={tryPop} underline={underline} />
+            {t >= T.plusFiveIn && <Tag text="+5" x={540} y={790} size={84} scale={fivePop} />}
           </g>
         )}
         {showTwo && (
           <g>
-            <Starburst x={540} y={560 + twoRise} r={150} spikes={12} rotate={-t * 30} fill={COLORS.yellow} scale={twoPop} />
-            <PopText text="+2" x={540} y={545 + twoRise} size={130} fill="#FFFFFF" scale={twoPop} rotate={-4} />
+            <Tag text="+2" x={540} y={560 + twoRise} size={96} scale={twoPop} />
           </g>
         )}
 

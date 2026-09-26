@@ -8,29 +8,43 @@ const STAND_Z = 62;
 const BOARD_Z = 54;
 const LINE_W = 0.22;
 
-const Sky: React.FC<{cam: Camera; t: number}> = ({cam, t}) => {
-  const drift = t * 6 - cam.yaw * 900 - cam.x * 8;
-  const clouds = [
-    {x: 160, y: 470, s: 1.1},
-    {x: 640, y: 420, s: 0.8},
-    {x: 980, y: 520, s: 1.0},
-    {x: 1400, y: 450, s: 0.9},
-  ];
+// Night sky with floodlight towers glowing above the stands.
+const LAMPS = [-30, -12, 12, 30];
+const Sky: React.FC<{cam: Camera}> = ({cam}) => {
   return (
     <g>
-      <rect width={1080} height={1920} fill={COLORS.skyTop} />
-      <rect y={560} width={1080} height={1360} fill={COLORS.skyBottom} />
-      {clouds.map((c, i) => {
-        const x = ((c.x + drift + 2000) % 1700) - 250;
+      <defs>
+        <linearGradient id="nightSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={COLORS.skyTop} />
+          <stop offset="1" stopColor={COLORS.skyBottom} />
+        </linearGradient>
+        <radialGradient id="lampGlow">
+          <stop offset="0" stopColor={COLORS.lamp} stopOpacity={0.9} />
+          <stop offset="0.25" stopColor={COLORS.haze} stopOpacity={0.35} />
+          <stop offset="1" stopColor={COLORS.haze} stopOpacity={0} />
+        </radialGradient>
+      </defs>
+      <rect width={1080} height={1920} fill="url(#nightSky)" />
+      {LAMPS.map((x) => {
+        const top = project({x, y: 21, z: 66}, cam);
+        const foot = project({x, y: 16, z: 66}, cam);
+        if (top.depth <= 0) return null;
+        const w = 6 * top.s;
+        const h = 2.4 * top.s;
         return (
-          <g key={i} transform={`translate(${x},${c.y}) scale(${c.s})`}>
-            <path
-              d="M-90,20 Q-110,-10 -70,-18 Q-60,-58 -10,-44 Q20,-72 58,-40 Q100,-44 96,-4 Q120,20 80,24 Z"
-              fill={COLORS.cloud}
-              stroke={COLORS.outline}
-              strokeWidth={6}
-              strokeLinejoin="round"
-            />
+          <g key={x}>
+            <circle cx={top.x} cy={top.y - h / 2} r={w * 1.9} fill="url(#lampGlow)" />
+            <path d={`M${foot.x - 0.25 * foot.s},${foot.y} L${top.x - 0.25 * top.s},${top.y} L${top.x + 0.25 * top.s},${top.y} L${foot.x + 0.25 * foot.s},${foot.y} Z`} fill="#0B0E16" />
+            <rect x={top.x - w / 2} y={top.y - h} width={w} height={h} rx={0.3 * top.s} fill="#1B1F27" />
+            {Array.from({length: 10}).map((_, i) => (
+              <circle
+                key={i}
+                cx={top.x - w / 2 + ((i % 5) + 0.5) * (w / 5)}
+                cy={top.y - h + (Math.floor(i / 5) + 0.5) * (h / 2)}
+                r={0.42 * top.s}
+                fill={COLORS.lamp}
+              />
+            ))}
           </g>
         );
       })}
@@ -69,22 +83,22 @@ const Stand: React.FC<{cam: Camera; cheer: number; t: number}> = ({cam, cheer, t
         key={x}
         d={wallRect(x, 0, x + 6, 1.0, BOARD_Z, cam)}
         fill={COLORS.board[i % COLORS.board.length]}
-        stroke={COLORS.outline}
-        strokeWidth={2}
       />,
     );
   }
+  boards.push(<path key="edge" d={wallRect(-60, 0.92, 60, 1.0, BOARD_Z - 0.01, cam)} fill={COLORS.accent} opacity={0.85} />);
   return (
     <g>
-      <path d={wallRect(-80, 0, 80, 15, STAND_Z, cam)} fill={COLORS.stand} stroke={COLORS.outline} strokeWidth={4} />
+      <path d={wallRect(-80, 0, 80, 15, STAND_Z, cam)} fill={COLORS.stand} />
       {rows}
       {CROWD.map((d, i) => {
         const hop = cheer * Math.max(0, Math.sin(t * 16 + d.p)) * 0.5;
         const p = project({x: d.x, y: d.y + hop, z: STAND_Z}, cam);
         if (p.x < -20 || p.x > 1100 || p.depth <= 0) return null;
-        return <circle key={i} cx={p.x} cy={p.y} r={0.38 * p.s} fill={d.c} />;
+        return <circle key={i} cx={p.x} cy={p.y} r={0.36 * p.s} fill={d.c} opacity={0.7} />;
       })}
-      <path d={wallRect(-80, 14.2, 80, 16.2, STAND_Z - 0.5, cam)} fill={COLORS.roof} stroke={COLORS.outline} strokeWidth={4} />
+      <path d={wallRect(-80, 14.2, 80, 16.2, STAND_Z - 0.5, cam)} fill={COLORS.roof} />
+      <path d={wallRect(-80, 14.1, 80, 14.35, STAND_Z - 0.6, cam)} fill={COLORS.lamp} opacity={0.8} />
       <path d={groundRect(-80, deadBallZ + 2, 80, STAND_Z, cam)} fill={COLORS.surround} />
       {boards}
     </g>
@@ -137,7 +151,7 @@ const Ground: React.FC<{cam: Camera}> = ({cam}) => {
 
 export const Backdrop: React.FC<{cam: Camera; t: number; cheer: number}> = ({cam, t, cheer}) => (
   <g>
-    <Sky cam={cam} t={t} />
+    <Sky cam={cam} />
     <Stand cam={cam} cheer={cheer} t={t} />
     <Ground cam={cam} />
   </g>
@@ -149,7 +163,7 @@ export const Posts: React.FC<{cam: Camera; t: number}> = ({cam, t}) => {
   const g = PITCH.postHalfGap;
   const w = 0.3;
   const s = project({x: 0, y: PITCH.crossbarY, z}, cam).s;
-  const sw = Math.max(3, Math.min(8, 0.07 * s));
+  const sw = Math.max(1.5, Math.min(4, 0.035 * s));
   const top = PITCH.postTopY;
   const flag = (x: number, dir: number) => {
     const base = project({x, y: top, z}, cam);
@@ -158,9 +172,9 @@ export const Posts: React.FC<{cam: Camera; t: number}> = ({cam, t}) => {
     return (
       <path
         d={`M${base.x},${base.y} L${base.x + dir * size * 1.2},${base.y + size * (0.35 + wave)} L${base.x},${base.y + size * 0.8} Z`}
-        fill={COLORS.yellow}
+        fill={COLORS.flag}
         stroke={COLORS.outline}
-        strokeWidth={sw * 0.8}
+        strokeWidth={sw * 0.5}
         strokeLinejoin="round"
       />
     );
@@ -178,10 +192,23 @@ export const Posts: React.FC<{cam: Camera; t: number}> = ({cam, t}) => {
         <g key={x}>
           {flag(x, x < 0 ? -1 : 1)}
           <path d={wallRect(x - w / 2, 0, x + w / 2, top, z, cam)} fill={COLORS.post} stroke={COLORS.outline} strokeWidth={sw} />
-          <path d={wallRect(x - 0.42, 0, x + 0.42, 2.0, z - 0.2, cam)} fill={COLORS.padBlue} stroke={COLORS.outline} strokeWidth={sw} />
-          <path d={wallRect(x - 0.42, 0.75, x + 0.42, 1.25, z - 0.2, cam)} fill={COLORS.padYellow} />
+          <path d={wallRect(x - 0.42, 0, x + 0.42, 2.0, z - 0.2, cam)} fill={COLORS.pad} stroke={COLORS.outline} strokeWidth={sw} />
+          <path d={wallRect(x - 0.42, 0.75, x + 0.42, 1.25, z - 0.2, cam)} fill={COLORS.padBand} />
         </g>
       ))}
     </g>
   );
 };
+
+// Darkens the frame edges so the floodlit middle glows.
+export const Vignette: React.FC = () => (
+  <g>
+    <defs>
+      <radialGradient id="vignette" cx="0.5" cy="0.52" r="0.75">
+        <stop offset="0.55" stopColor="#05070C" stopOpacity={0} />
+        <stop offset="1" stopColor="#05070C" stopOpacity={0.55} />
+      </radialGradient>
+    </defs>
+    <rect width={1080} height={1920} fill="url(#vignette)" />
+  </g>
+);

@@ -61,67 +61,97 @@ export const TIMING = {
   scoreTickStep: 0.08, // gap between each number as the score counts up
 };
 
-// Colours. Flat, bold, friendly.
-export const COLORS = {
-  outline: '#1A1A2E',
-  skyTop: '#5EC4F7',
-  skyBottom: '#A8E3FF',
-  cloud: '#FFFFFF',
-  grassA: '#4CB944',
-  grassB: '#43A83C',
-  inGoalA: '#3E9E54',
-  inGoalB: '#37914B',
-  surround: '#3A8F36',
-  line: '#FFFFFF',
-  post: '#FFFFFF',
-  padBlue: '#1E6FE8',
-  padYellow: '#FFD23F',
-  stand: '#2D3561',
-  standRow: '#3A4478',
-  roof: '#1F2447',
-  board: ['#FFD23F', '#FF5A5F', '#1E6FE8', '#FFFFFF'],
-  crowd: ['#1E6FE8', '#FFFFFF', '#FF5A5F', '#FFD23F', '#1E6FE8', '#8ED1FC'],
-  ball: '#FFF8EC',
-  ballStripe: '#E63946',
-  tee: '#FF8C1A',
-  yellow: '#FFD60A',
-  blue: '#1E6FE8',
-  red: '#E63946',
-  white: '#FFFFFF',
+// Palette, taken from the player reference sheet.
+export const PALETTE = {
+  kit: '#0F1113',
+  shadow: '#2A2D31',
+  mid: '#5E6368',
+  skin: '#D1A27A',
+  white: '#F2F2F2',
+  accent: '#A6E222',
 };
 
+// Scene colours. Night match under floodlights.
+export const COLORS = {
+  outline: PALETTE.kit,
+  skyTop: '#070A12',
+  skyBottom: '#141B2C',
+  haze: '#BFD4FF',
+  lamp: '#FFF9E6',
+  grassA: '#46983F',
+  grassB: '#3E8B39',
+  inGoalA: '#3A8436',
+  inGoalB: '#347A31',
+  surround: '#2B6629',
+  line: PALETTE.white,
+  post: PALETTE.white,
+  pad: PALETTE.kit,
+  padBand: PALETTE.white,
+  flag: PALETTE.accent,
+  stand: '#121725',
+  standRow: '#1A2133',
+  roof: '#0B0E16',
+  board: ['#1B1F27', '#2A2D31'],
+  crowd: ['#5E6368', '#8A9099', '#F2F2F2', '#3C4250', '#A6B0BF', '#C9CDD3'],
+  ball: PALETTE.white,
+  ballStripe: PALETTE.mid,
+  tee: PALETTE.accent,
+  accent: PALETTE.accent,
+  white: PALETTE.white,
+  dark: PALETTE.kit,
+  panel: PALETTE.shadow,
+  mid: PALETTE.mid,
+};
+
+// Home: all black, white-hooped socks (as on the reference sheet).
+// Away: all white, so they read clearly against it.
 export const KITS = {
   home: {
-    shirt: '#1E6FE8',
-    shirtShade: '#1558BF',
-    trim: '#FFFFFF',
-    shorts: '#FFFFFF',
-    socks: '#1E6FE8',
-    sockHoop: '#FFFFFF',
-    skin: '#F2C29B',
-    hair: '#4A2E1E',
+    shirt: PALETTE.kit,
+    shirtLit: PALETTE.shadow,
+    shirtShade: '#050607',
+    collar: PALETTE.shadow,
+    numberColor: PALETTE.white,
+    shorts: PALETTE.kit,
+    shortsShade: '#050607',
+    socks: PALETTE.kit,
+    sockHoop: PALETTE.white,
+    band: PALETTE.kit,
+    skin: PALETTE.skin,
+    skinShade: '#B3825C',
+    hair: PALETTE.kit,
     number: '10',
   },
   away: {
-    shirt: '#E63946',
-    shirtShade: '#BF2A36',
-    trim: '#FFFFFF',
-    shorts: '#1A1A2E',
-    socks: '#E63946',
-    sockHoop: '#1A1A2E',
-    skin: '#C98B5E',
-    hair: '#1A1A2E',
+    shirt: PALETTE.white,
+    shirtLit: '#FFFFFF',
+    shirtShade: '#C4C9D0',
+    collar: PALETTE.mid,
+    numberColor: PALETTE.kit,
+    shorts: PALETTE.white,
+    shortsShade: '#C4C9D0',
+    socks: PALETTE.white,
+    sockHoop: PALETTE.kit,
+    band: PALETTE.white,
+    skin: '#9C6B48',
+    skinShade: '#7C5134',
+    hair: PALETTE.kit,
     number: '7',
   },
   away2: {
-    shirt: '#E63946',
-    shirtShade: '#BF2A36',
-    trim: '#FFFFFF',
-    shorts: '#1A1A2E',
-    socks: '#E63946',
-    sockHoop: '#1A1A2E',
-    skin: '#8D5A3B',
-    hair: '#1A1A2E',
+    shirt: PALETTE.white,
+    shirtLit: '#FFFFFF',
+    shirtShade: '#C4C9D0',
+    collar: PALETTE.mid,
+    numberColor: PALETTE.kit,
+    shorts: PALETTE.white,
+    shortsShade: '#C4C9D0',
+    socks: PALETTE.white,
+    sockHoop: PALETTE.kit,
+    band: PALETTE.white,
+    skin: '#E2B690',
+    skinShade: '#C39269',
+    hair: '#4A3222',
     number: '14',
   },
 };
@@ -143,8 +173,8 @@ export const PITCH = {
   conversionDistance: 15, // metres back from the try line
 };
 
-// Cartoon exaggeration so people and ball read well on a phone.
-export const CHAR_SCALE = 1.25; // metres per 100 sprite units
-export const BALL_SCALE = 1.9;
+// A little exaggeration so people and ball read well on a phone.
+export const CHAR_SCALE = 1.3; // metres per 100 sprite units
+export const BALL_SCALE = 1.6;
 
 export const sec = (s: number) => s * VIDEO.fps;

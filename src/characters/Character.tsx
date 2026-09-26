@@ -1,9 +1,11 @@
 import React from 'react';
-import {COLORS, Kit} from '../config';
+import {Kit, PALETTE} from '../config';
 import {BallShape} from './Ball';
 
-// Characters are drawn in local "sprite units" (about 1cm each).
+// Players are drawn in local "sprite units" (about 1cm each) with
+// natural athletic proportions: roughly seven heads tall.
 // Feet sit on (0,0) and the body goes up into negative y.
+// Light comes from the upper left, so shadows sit on the right.
 
 export type Pt = [number, number];
 
@@ -27,259 +29,306 @@ export type Rig = {
 };
 
 export type View = 'back' | 'front';
-export type Expression = 'determined' | 'shock' | 'dizzy' | 'joy' | 'focus';
+export type Expression = 'determined' | 'shock' | 'dazed' | 'joy' | 'focus';
 
-const O = 3.5; // outline thickness in sprite units
-const INK = COLORS.outline;
+export const INK = PALETTE.kit;
+export const O = 1.1; // outline thickness in sprite units
+export const LABEL_FONT = "'Liberation Sans', Arial, Helvetica, sans-serif";
 
-const seg = (a: Pt, b: Pt, f: number): Pt => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
-const line = (pts: Pt[]) => pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join('');
+const lerpPt = (a: Pt, b: Pt, f: number): Pt => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+const f1 = (n: number) => n.toFixed(2);
 
-const Stroke: React.FC<{pts: Pt[]; w: number; color: string}> = ({pts, w, color}) => (
-  <path d={line(pts)} stroke={color} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+// A limb segment: two circles joined by tangents, wider at one end.
+export const taperPath = (a: Pt, b: Pt, wa: number, wb: number) => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 0.001;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const ra = wa / 2;
+  const rb = wb / 2;
+  const p1 = `${f1(a[0] + nx * ra)},${f1(a[1] + ny * ra)}`;
+  const p2 = `${f1(b[0] + nx * rb)},${f1(b[1] + ny * rb)}`;
+  const p3 = `${f1(b[0] - nx * rb)},${f1(b[1] - ny * rb)}`;
+  const p4 = `${f1(a[0] - nx * ra)},${f1(a[1] - ny * ra)}`;
+  return `M${p1} L${p2} A${f1(rb)},${f1(rb)} 0 0 0 ${p3} L${p4} A${f1(ra)},${f1(ra)} 0 0 0 ${p1} Z`;
+};
+
+// A flat band across a limb (sock hoops, cuffs): square ends, no caps.
+const bandPath = (a: Pt, b: Pt, wa: number, wb: number) => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 0.001;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const q = [
+    [a[0] + (nx * wa) / 2, a[1] + (ny * wa) / 2],
+    [b[0] + (nx * wb) / 2, b[1] + (ny * wb) / 2],
+    [b[0] - (nx * wb) / 2, b[1] - (ny * wb) / 2],
+    [a[0] - (nx * wa) / 2, a[1] - (ny * wa) / 2],
+  ];
+  return `M${q.map((p) => `${f1(p[0])},${f1(p[1])}`).join(' L')} Z`;
+};
+
+// The shadow strip that runs down the shaded side of a segment.
+const shadePath = (a: Pt, b: Pt, wa: number, wb: number) => {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len = Math.hypot(dx, dy) || 0.001;
+  let nx = -dy / len;
+  let ny = dx / len;
+  if (nx + 0.35 * ny < 0) {
+    nx = -nx;
+    ny = -ny;
+  }
+  const a2: Pt = [a[0] + nx * wa * 0.26, a[1] + ny * wa * 0.26];
+  const b2: Pt = [b[0] + nx * wb * 0.26, b[1] + ny * wb * 0.26];
+  return taperPath(a2, b2, wa * 0.44, wb * 0.44);
+};
+
+export type Seg = {a: Pt; b: Pt; wa: number; wb: number; fill: string; shade?: string};
+
+// Draw a chain of segments: one outline underneath, then the fills.
+export const Limb: React.FC<{segs: Seg[]}> = ({segs}) => (
+  <g>
+    <path d={segs.map((s) => taperPath(s.a, s.b, s.wa + 2 * O, s.wb + 2 * O)).join('')} fill={INK} />
+    {segs.map((s, i) => (
+      <g key={i}>
+        <path d={taperPath(s.a, s.b, s.wa, s.wb)} fill={s.fill} />
+        {s.shade && <path d={shadePath(s.a, s.b, s.wa, s.wb)} fill={s.shade} />}
+      </g>
+    ))}
+  </g>
 );
 
-const Leg: React.FC<{hip: Pt; knee: Pt; foot: Pt; sole?: boolean; kit: Kit; side: -1 | 1}> = ({
-  hip,
-  knee,
-  foot,
-  sole,
-  kit,
-  side,
-}) => {
-  const W = 19;
-  const hoopA = seg(knee, foot, 0.12);
-  const hoopB = seg(knee, foot, 0.3);
+export const Boot: React.FC<{at: Pt; sole?: boolean; view: View}> = ({at, sole, view}) => (
+  <g transform={`translate(${f1(at[0])},${f1(at[1] + 1)})`}>
+    {sole ? (
+      <g>
+        <ellipse rx={6.2} ry={8.2} fill={PALETTE.shadow} stroke={INK} strokeWidth={O} />
+        {[
+          [-2.4, -4],
+          [2.4, -4],
+          [-2.4, 0.5],
+          [2.4, 0.5],
+          [0, 5],
+        ].map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={1.1} fill={PALETTE.mid} />
+        ))}
+      </g>
+    ) : (
+      <g>
+        <path
+          d={view === 'front' ? 'M-6.5,-5 Q-8.5,5 0,5.8 Q8.5,5 6.5,-5 Z' : 'M-6,-5 Q-7.2,4.5 0,5.2 Q7.2,4.5 6,-5 Z'}
+          fill={INK}
+          stroke={INK}
+          strokeWidth={O}
+          strokeLinejoin="round"
+        />
+        <path d="M-5.6,3.4 Q0,5.2 5.6,3.4" stroke={PALETTE.mid} strokeWidth={0.9} fill="none" />
+        {view === 'front' && <path d="M-2.5,-2 L2.5,-2 M-2.5,0 L2.5,0" stroke={PALETTE.shadow} strokeWidth={0.8} />}
+      </g>
+    )}
+  </g>
+);
+
+export const Leg: React.FC<{hip: Pt; knee: Pt; foot: Pt; sole?: boolean; kit: Kit; view: View}> = ({hip, knee, foot, sole, kit, view}) => {
+  const ankle = lerpPt(knee, foot, 0.9);
+  const sockTop = lerpPt(knee, foot, 0.16);
+  const h1a = lerpPt(knee, foot, 0.22);
+  const h1b = lerpPt(knee, foot, 0.255);
+  const h2a = lerpPt(knee, foot, 0.3);
+  const h2b = lerpPt(knee, foot, 0.335);
+  const w = (f: number) => 13.2 - f * 5.2; // calf tapers to the ankle
   return (
     <g>
-      <Stroke pts={[hip, knee, foot]} w={W + 2 * O} color={INK} />
-      <Stroke pts={[hip, knee]} w={W} color={kit.skin} />
-      <Stroke pts={[knee, foot]} w={W} color={kit.socks} />
-      <Stroke pts={[knee, hoopA]} w={W} color={kit.socks} />
-      <Stroke pts={[hoopA, hoopB]} w={W - 0.5} color={kit.sockHoop} />
-      {sole ? (
-        <g transform={`translate(${foot[0]},${foot[1]})`}>
-          <ellipse rx={11} ry={13} fill="#3B3B4F" stroke={INK} strokeWidth={O} />
-          {[
-            [-4, -6],
-            [4, -6],
-            [-4, 1],
-            [4, 1],
-            [0, 8],
-          ].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={2} fill="#D9D9E3" />
-          ))}
-        </g>
-      ) : (
-        <g transform={`translate(${foot[0] + side * 2},${foot[1] - 2})`}>
-          <path
-            d="M-12,4 Q-13,-8 0,-9 Q13,-8 12,4 Z"
-            fill={INK}
-            stroke={INK}
-            strokeWidth={O}
-            strokeLinejoin="round"
-          />
-          <path d="M-7,-5 L7,-5" stroke={kit.shirt} strokeWidth={2.4} strokeLinecap="round" />
-        </g>
-      )}
+      <Limb
+        segs={[
+          {a: hip, b: knee, wa: 19.5, wb: 12.6, fill: kit.skin, shade: kit.skinShade},
+          {a: knee, b: sockTop, wa: 12.6, wb: w(0.16), fill: kit.skin, shade: kit.skinShade},
+          {a: sockTop, b: ankle, wa: w(0.16), wb: w(0.9), fill: kit.socks, shade: kit.shirtShade},
+        ]}
+      />
+      <path d={bandPath(h1a, h1b, w(0.22) - 0.3, w(0.27) - 0.3)} fill={kit.sockHoop} />
+      <path d={bandPath(h2a, h2b, w(0.32) - 0.3, w(0.37) - 0.3)} fill={kit.sockHoop} />
+      <Boot at={foot} sole={sole} view={view} />
     </g>
   );
 };
 
-const Arm: React.FC<{shoulder: Pt; elbow: Pt; hand: Pt; kit: Kit; fist?: boolean}> = ({
-  shoulder,
-  elbow,
-  hand,
-  kit,
-  fist,
-}) => {
-  const cuffA = seg(shoulder, elbow, 0.62);
-  const cuffB = seg(shoulder, elbow, 0.8);
+export const Arm: React.FC<{shoulder: Pt; elbow: Pt; hand: Pt; kit: Kit}> = ({shoulder, elbow, hand, kit}) => {
+  const sleeveEnd = lerpPt(shoulder, elbow, 0.55);
+  const wrist = lerpPt(elbow, hand, 0.86);
+  const bandA = lerpPt(elbow, hand, 0.66);
   return (
     <g>
-      <Stroke pts={[shoulder, elbow, hand]} w={15 + 2 * O} color={INK} />
-      <Stroke pts={[elbow, hand]} w={15} color={kit.skin} />
-      <Stroke pts={[shoulder, cuffB]} w={18} color={kit.shirt} />
-      <Stroke pts={[cuffA, cuffB]} w={18} color={kit.trim} />
-      <circle cx={hand[0]} cy={hand[1]} r={fist ? 9.5 : 8.5} fill={kit.skin} stroke={INK} strokeWidth={O} />
+      <Limb
+        segs={[
+          {a: shoulder, b: elbow, wa: 12.5, wb: 9.5, fill: kit.skin, shade: kit.skinShade},
+          {a: elbow, b: wrist, wa: 9.5, wb: 7, fill: kit.skin, shade: kit.skinShade},
+        ]}
+      />
+      <Limb segs={[{a: bandA, b: wrist, wa: 8.4, wb: 7.8, fill: kit.band}]} />
+      <path d={bandPath(shoulder, sleeveEnd, 15.4 + 2 * O, 13.2 + 2 * O)} fill={INK} />
+      <circle cx={f1(shoulder[0])} cy={f1(shoulder[1])} r={7.7 + O} fill={INK} />
+      <circle cx={f1(shoulder[0])} cy={f1(shoulder[1])} r={7.7} fill={kit.shirt} />
+      <path d={bandPath(shoulder, sleeveEnd, 15.4, 13.2)} fill={kit.shirt} />
+      <path d={bandPath(lerpPt(shoulder, sleeveEnd, 0.9), sleeveEnd, 13.5, 13.2)} fill={kit.shirtLit} />
+      <circle cx={f1(hand[0])} cy={f1(hand[1])} r={4.9} fill={kit.skin} stroke={INK} strokeWidth={O} />
     </g>
   );
 };
 
-const Shorts: React.FC<{kit: Kit}> = ({kit}) => (
-  <path
-    d="M-30,-86 L30,-86 L34,-54 L4,-54 L0,-62 L-4,-54 L-34,-54 Z"
-    fill={kit.shorts}
-    stroke={INK}
-    strokeWidth={O}
-    strokeLinejoin="round"
-  />
-);
-
-const Torso: React.FC<{kit: Kit; view: View}> = ({kit, view}) => (
+export const Shorts: React.FC<{kit: Kit}> = ({kit}) => (
   <g>
     <path
-      d="M-22,-136 Q-36,-134 -39,-122 L-31,-80 L31,-80 L39,-122 Q36,-134 22,-136 Q0,-128 -22,-136 Z"
-      fill={kit.shirt}
+      d="M-17,-104 L17,-104 L20.5,-80 L2,-78.5 L0,-86 L-2,-78.5 L-20.5,-80 Z"
+      fill={kit.shorts}
       stroke={INK}
       strokeWidth={O}
       strokeLinejoin="round"
     />
-    {/* flat side shading */}
-    <path d="M26,-130 L36,-122 L30,-84 L24,-84 Z" fill={kit.shirtShade} />
-    {/* hem stripe */}
-    <path d="M-31,-86 L31,-86" stroke={kit.trim} strokeWidth={4} />
+    <path d="M9,-103 L16.4,-103 L19.7,-80.8 L11.5,-80 Z" fill={kit.shortsShade} />
+  </g>
+);
+
+const TORSO =
+  'M-7,-155 Q-14,-154 -21,-151.5 Q-29,-148.5 -29,-140 L-21.5,-128 Q-17,-117 -16,-106 L-17,-99 L17,-99 L16,-106 Q17,-117 21.5,-128 L29,-140 Q29,-148.5 21,-151.5 Q14,-154 7,-155 Q0,-151.5 -7,-155 Z';
+
+export const Torso: React.FC<{kit: Kit; view: View}> = ({kit, view}) => (
+  <g>
+    <path d={TORSO} fill={kit.shirt} stroke={INK} strokeWidth={O} strokeLinejoin="round" />
+    {/* lit raglan panel and shaded side: clothing shapes do the work */}
+    <path d="M-8,-154 Q-21,-151 -27.5,-143 L-22,-133 Q-17,-144 -8,-154 Z" fill={kit.shirtLit} />
+    <path d="M11,-153 Q26,-149 28,-140.5 L20.6,-128.5 Q16.5,-117 15.2,-106 L16,-100 L9.5,-100 Q11.5,-122 11,-153 Z" fill={kit.shirtShade} />
+    <path d="M-16.6,-101.5 L16.6,-101.5" stroke={kit.shirtLit} strokeWidth={0.9} />
+    {/* floodlight rim on the lit edge */}
+    <path d="M-27.8,-141 L-21,-129.5 Q-16.8,-118 -15.6,-106" stroke={PALETTE.mid} strokeWidth={1.1} fill="none" strokeLinecap="round" />
     {view === 'back' ? (
       <>
-        <path d="M-17,-134 Q0,-127 17,-134" stroke={kit.trim} strokeWidth={5} fill="none" strokeLinecap="round" />
-        <text
-          x={0}
-          y={-94}
-          textAnchor="middle"
-          fontFamily="'DejaVu Sans', 'Arial Black', Arial, sans-serif"
-          fontWeight={900}
-          fontSize={34}
-          fill={kit.trim}
-          stroke={INK}
-          strokeWidth={3}
-          paintOrder="stroke"
-          letterSpacing={-1}
-        >
-          {kit.number}
-        </text>
+        <path d="M-7,-155 Q0,-151.5 7,-155" stroke={kit.collar} strokeWidth={2.2} fill="none" strokeLinecap="round" />
+        <g transform="translate(0,-119) scale(0.8,1)">
+          <text
+            textAnchor="middle"
+            fontFamily={LABEL_FONT}
+            fontWeight={700}
+            fontSize={19}
+            fill={kit.numberColor}
+            letterSpacing={-0.5}
+          >
+            {kit.number}
+          </text>
+        </g>
       </>
     ) : (
       <>
-        <path d="M-15,-135 L0,-118 L15,-135" stroke={kit.trim} strokeWidth={5} fill="none" strokeLinejoin="round" />
-        <circle cx={-15} cy={-110} r={6} fill={kit.trim} stroke={INK} strokeWidth={2} />
-        <text
-          x={15}
-          y={-104}
-          textAnchor="middle"
-          fontFamily="'DejaVu Sans', 'Arial Black', Arial, sans-serif"
-          fontWeight={900}
-          fontSize={15}
-          fill={kit.trim}
-          stroke={INK}
-          strokeWidth={2}
-          paintOrder="stroke"
-        >
-          {kit.number}
-        </text>
+        <path d="M-7,-155 Q0,-150.5 7,-155" stroke={kit.collar} strokeWidth={2} fill="none" strokeLinecap="round" />
+        <path d="M0,-151.2 L0,-145.5" stroke={kit.collar} strokeWidth={1.3} strokeLinecap="round" />
       </>
     )}
   </g>
 );
 
-const Face: React.FC<{expr: Expression}> = ({expr}) => {
+const Face: React.FC<{expr: Expression; kit: Kit}> = ({expr, kit}) => {
   const brow = {
-    determined: [
-      [-15, -171, -4, -166],
-      [4, -166, 15, -171],
-    ],
-    focus: [
-      [-15, -170, -4, -167],
-      [4, -167, 15, -170],
-    ],
-    shock: [
-      [-15, -174, -4, -176],
-      [4, -176, 15, -174],
-    ],
-    dizzy: [
-      [-15, -172, -4, -172],
-      [4, -172, 15, -172],
-    ],
-    joy: [
-      [-15, -173, -4, -175],
-      [4, -175, 15, -173],
-    ],
+    determined: [-1.2, 1.2],
+    focus: [-0.6, 0.6],
+    shock: [1.4, 1.4],
+    dazed: [0.6, -0.4],
+    joy: [1.0, 1.0],
   }[expr];
+  const lip = '#6B3F2A';
   return (
     <g>
-      {expr === 'dizzy' ? (
-        <>
-          {[-9, 9].map((x) => (
-            <g key={x} stroke={INK} strokeWidth={2.6} strokeLinecap="round">
-              <path d={`M${x - 4},-162 L${x + 4},-154`} />
-              <path d={`M${x + 4},-162 L${x - 4},-154`} />
-            </g>
-          ))}
-        </>
-      ) : expr === 'joy' ? (
-        <>
-          {[-9, 9].map((x) => (
+      {[-1, 1].map((side) => {
+        const x = side * 4.6;
+        const lift = side < 0 ? brow[0] : brow[1];
+        return (
+          <g key={side}>
             <path
-              key={x}
-              d={`M${x - 5},-157 Q${x},-165 ${x + 5},-157`}
-              stroke={INK}
-              strokeWidth={3}
-              fill="none"
+              d={`M${x - side * 2.7},${-175.2 - lift * 0.3} L${x + side * 2.9},${-175.6 - lift}`}
+              stroke={kit.hair}
+              strokeWidth={1.7}
               strokeLinecap="round"
             />
-          ))}
-        </>
-      ) : (
-        <>
-          {[-9, 9].map((x) => (
-            <g key={x}>
-              <ellipse cx={x} cy={-158} rx={5.2} ry={expr === 'shock' ? 7 : 6} fill="#FFFFFF" stroke={INK} strokeWidth={2} />
-              <circle cx={x + (expr === 'focus' ? 0 : 0.8)} cy={-157} r={expr === 'shock' ? 2 : 2.8} fill={INK} />
-            </g>
-          ))}
-        </>
-      )}
-      {brow.map(([x0, y0, x1, y1], i) => (
-        <path key={i} d={`M${x0},${y0} L${x1},${y1}`} stroke={INK} strokeWidth={3.4} strokeLinecap="round" />
-      ))}
-      <path d="M-2,-152 Q1,-148 -2,-146" stroke={INK} strokeWidth={2} fill="none" strokeLinecap="round" />
-      {expr === 'joy' && (
+            {expr === 'joy' ? (
+              <path d={`M${x - 1.8},-171.4 Q${x},-173.4 ${x + 1.8},-171.4`} stroke={INK} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+            ) : expr === 'dazed' ? (
+              <path d={`M${x - 1.8},-171.8 L${x + 1.8},-171.8`} stroke={INK} strokeWidth={0.9} strokeLinecap="round" />
+            ) : expr === 'shock' ? (
+              <g>
+                <ellipse cx={x} cy={-172} rx={1.9} ry={2.1} fill={PALETTE.white} stroke={INK} strokeWidth={0.6} />
+                <circle cx={x} cy={-171.8} r={0.95} fill={INK} />
+              </g>
+            ) : (
+              <g>
+                <ellipse cx={x} cy={-171.9} rx={1.55} ry={1.05} fill={INK} />
+                <path d={`M${x - 2},-172.9 Q${x},-173.8 ${x + 2},-172.9`} stroke={INK} strokeWidth={0.6} fill="none" />
+              </g>
+            )}
+          </g>
+        );
+      })}
+      <path d="M0.4,-171 L1.5,-166.2 Q0.6,-165.2 -0.9,-165.7" stroke={kit.skinShade} strokeWidth={0.9} fill="none" strokeLinecap="round" />
+      {expr === 'joy' ? (
         <g>
-          <path d="M-13,-144 Q0,-126 13,-144 Z" fill="#7A1F2B" stroke={INK} strokeWidth={2.6} strokeLinejoin="round" />
-          <path d="M-10,-143 L10,-143 L9,-140 L-9,-140 Z" fill="#FFFFFF" />
-          <ellipse cx={0} cy={-134} rx={5} ry={3} fill="#FF7A8A" />
+          <path d="M-4.6,-162.6 Q0,-161.6 4.6,-162.6 Q3.6,-158 0,-157.8 Q-3.6,-158 -4.6,-162.6 Z" fill="#4A2420" stroke={INK} strokeWidth={0.5} />
+          <path d="M-3.9,-162.4 Q0,-161.7 3.9,-162.4 L3.4,-161 Q0,-160.5 -3.4,-161 Z" fill={PALETTE.white} />
         </g>
-      )}
-      {expr === 'determined' && (
-        <path d="M-8,-141 Q0,-144 8,-141" stroke={INK} strokeWidth={3} fill="none" strokeLinecap="round" />
-      )}
-      {expr === 'focus' && <path d="M-6,-141 L6,-141" stroke={INK} strokeWidth={3} strokeLinecap="round" />}
-      {expr === 'shock' && <ellipse cx={0} cy={-139} rx={5} ry={6.5} fill="#7A1F2B" stroke={INK} strokeWidth={2.4} />}
-      {expr === 'dizzy' && (
-        <path d="M-9,-140 Q-4.5,-145 0,-140 Q4.5,-135 9,-140" stroke={INK} strokeWidth={2.6} fill="none" strokeLinecap="round" />
-      )}
-      {(expr === 'joy' || expr === 'shock') && (
-        <>
-          <ellipse cx={-17} cy={-148} rx={4.5} ry={2.8} fill="#FF8C8C" opacity={0.6} />
-          <ellipse cx={17} cy={-148} rx={4.5} ry={2.8} fill="#FF8C8C" opacity={0.6} />
-        </>
+      ) : expr === 'shock' ? (
+        <ellipse cx={0} cy={-160.6} rx={1.8} ry={2.3} fill="#4A2420" />
+      ) : expr === 'dazed' ? (
+        <path d="M-3.2,-161 Q-1.6,-162.2 0,-161 Q1.6,-159.8 3.2,-161" stroke={lip} strokeWidth={1} fill="none" strokeLinecap="round" />
+      ) : (
+        <path d={expr === 'focus' ? 'M-3,-161.4 L3,-161.4' : 'M-3.3,-161.2 Q0,-162.1 3.3,-161.2'} stroke={lip} strokeWidth={1} fill="none" strokeLinecap="round" />
       )}
     </g>
   );
 };
 
-const Head: React.FC<{kit: Kit; view: View; expr: Expression}> = ({kit, view, expr}) => (
+export const Head: React.FC<{kit: Kit; view: View; expr: Expression}> = ({kit, view, expr}) => (
   <g>
-    <rect x={-8} y={-142} width={16} height={12} fill={kit.skin} stroke={INK} strokeWidth={O} />
-    <circle cx={-25} cy={-155} r={6.5} fill={kit.skin} stroke={INK} strokeWidth={O} />
-    <circle cx={25} cy={-155} r={6.5} fill={kit.skin} stroke={INK} strokeWidth={O} />
+    <Limb segs={[{a: [0, -162], b: [0, -150], wa: 10, wb: 12.5, fill: kit.skin, shade: kit.skinShade}]} />
+    {view === 'front' && <path d="M-4.5,-158.5 Q0,-156 4.5,-158.5 L4.8,-155 Q0,-153.5 -4.8,-155 Z" fill={kit.skinShade} />}
+    {[-1, 1].map((s) => (
+      <ellipse key={s} cx={s * 10.7} cy={-171} rx={2.1} ry={3.4} fill={kit.skin} stroke={INK} strokeWidth={O} />
+    ))}
     {view === 'back' ? (
-      <>
-        <circle cx={0} cy={-157} r={25} fill={kit.hair} stroke={INK} strokeWidth={O} />
-        <path d="M-17,-137 Q0,-131 17,-137" stroke={kit.skin} strokeWidth={5} fill="none" strokeLinecap="round" />
-        <path d="M-12,-172 Q-4,-178 6,-176" stroke="#FFFFFF" strokeOpacity={0.25} strokeWidth={4} fill="none" strokeLinecap="round" />
-      </>
-    ) : (
-      <>
-        <circle cx={0} cy={-157} r={25} fill={kit.skin} stroke={INK} strokeWidth={O} />
+      <g>
         <path
-          d="M-25,-160 Q-25,-184 0,-184 Q25,-184 25,-160 L19,-168 L12,-162 L5,-169 L-3,-163 L-10,-169 L-17,-163 Z"
+          d="M-10.5,-175 C-10.5,-188 10.5,-188 10.5,-175 L10,-167 Q8,-161 0,-160 Q-8,-161 -10,-167 Z"
+          fill={kit.skin}
+          stroke={INK}
+          strokeWidth={O}
+        />
+        <path
+          d="M-11,-172 C-12.4,-191 12.4,-191 11,-172 Q10.4,-165.5 6,-163 L4,-164.5 L2,-162.6 L0,-164.4 L-2,-162.6 L-4,-164.5 L-6,-163 Q-10.4,-165.5 -11,-172 Z"
           fill={kit.hair}
           stroke={INK}
           strokeWidth={O}
           strokeLinejoin="round"
         />
-        <Face expr={expr} />
-      </>
+        <path d="M-6,-184 L-3.5,-180 M-1,-186 L1,-181.5 M4,-185 L5.5,-180.5 M-7.5,-176 L-5,-173 M6.5,-176 L8,-172.5" stroke={PALETTE.shadow} strokeWidth={0.8} strokeLinecap="round" />
+      </g>
+    ) : (
+      <g>
+        <path
+          d="M-10.5,-175 C-10.5,-188 10.5,-188 10.5,-175 L10,-167 Q9,-161 4,-158.5 Q0,-157.3 -4,-158.5 Q-9,-161 -10,-167 Z"
+          fill={kit.skin}
+          stroke={INK}
+          strokeWidth={O}
+        />
+        <path d="M10.5,-175 L10,-167 Q9,-161 4,-158.5 Q7.4,-164.5 7.6,-175 Z" fill={kit.skinShade} />
+        <Face expr={expr} kit={kit} />
+        <path
+          d="M-11.2,-172.5 Q-12.8,-184 -6.5,-187.6 Q-3,-190.4 1,-188.8 Q5.5,-190.8 8.6,-187 Q12.6,-184.4 11.4,-175 L10,-178.2 L8.8,-174.6 L7,-179.4 Q3,-177.2 -0.8,-180.2 L-2.8,-177 L-5.8,-180.4 L-7.8,-176.2 L-9.4,-179 L-10.2,-173 Z"
+          fill={kit.hair}
+          stroke={INK}
+          strokeWidth={O}
+          strokeLinejoin="round"
+        />
+        <path d="M-4,-186.5 L-2,-183 M2.5,-187.5 L3.6,-183.4 M6.8,-185 L7.6,-181.6" stroke={PALETTE.shadow} strokeWidth={0.8} strokeLinecap="round" />
+      </g>
     )}
   </g>
 );
@@ -289,15 +338,14 @@ export const Character: React.FC<{
   kit: Kit;
   view: View;
   expr?: Expression;
-  fists?: boolean;
-}> = ({rig, kit, view, expr = 'determined', fists}) => {
-  const legL = <Leg hip={rig.hipL} knee={rig.kneeL} foot={rig.footL} sole={rig.soleL} kit={kit} side={-1} />;
-  const legR = <Leg hip={rig.hipR} knee={rig.kneeR} foot={rig.footR} sole={rig.soleR} kit={kit} side={1} />;
-  const armL = <Arm shoulder={rig.shoulderL} elbow={rig.elbowL} hand={rig.handL} kit={kit} fist={fists} />;
-  const armR = <Arm shoulder={rig.shoulderR} elbow={rig.elbowR} hand={rig.handR} kit={kit} fist={fists} />;
+}> = ({rig, kit, view, expr = 'determined'}) => {
+  const legL = <Leg hip={rig.hipL} knee={rig.kneeL} foot={rig.footL} sole={rig.soleL} kit={kit} view={view} />;
+  const legR = <Leg hip={rig.hipR} knee={rig.kneeR} foot={rig.footR} sole={rig.soleR} kit={kit} view={view} />;
+  const armL = <Arm shoulder={rig.shoulderL} elbow={rig.elbowL} hand={rig.handL} kit={kit} />;
+  const armR = <Arm shoulder={rig.shoulderR} elbow={rig.elbowR} hand={rig.handR} kit={kit} />;
   const ball = rig.ball ? (
-    <g transform={`translate(${rig.ball.x},${rig.ball.y}) rotate(${rig.ball.rot})`}>
-      <BallShape />
+    <g transform={`translate(${rig.ball.x},${rig.ball.y}) rotate(${rig.ball.rot}) scale(0.72)`}>
+      <BallShape outline={O / 0.72} />
     </g>
   ) : null;
 
@@ -320,31 +368,30 @@ export const Character: React.FC<{
 // ── Poses ────────────────────────────────────────────────────
 
 const base = (): Rig => ({
-  hipL: [-14, -62],
-  kneeL: [-15, -32],
-  footL: [-15, -3],
-  hipR: [14, -62],
-  kneeR: [15, -32],
-  footR: [15, -3],
-  shoulderL: [-32, -124],
-  elbowL: [-40, -100],
-  handL: [-40, -78],
-  shoulderR: [32, -124],
-  elbowR: [40, -100],
-  handR: [40, -78],
+  hipL: [-9, -94],
+  kneeL: [-10, -52],
+  footL: [-10, -5],
+  hipR: [9, -94],
+  kneeR: [10, -52],
+  footR: [10, -5],
+  shoulderL: [-22, -146],
+  elbowL: [-27, -118],
+  handL: [-28, -91],
+  shoulderR: [22, -146],
+  elbowR: [27, -118],
+  handR: [28, -91],
 });
 
 // Back view, ball tucked under the right arm. phase in radians.
 export const runBack = (phase: number, withBall = true): Rig => {
   const r = base();
   const s = Math.sin(phase);
-  const lift = (side: number) => Math.max(0, side * s);
   const leg = (side: -1 | 1) => {
-    const l = lift(side);
+    const l = Math.max(0, side * s);
     const e = l * l * (3 - 2 * l); // smoothstep for a snappier heel kick
     return {
-      knee: [side * (16 - e * 2), -32 - e * 8] as Pt,
-      foot: [side * (14 - e * 4), -3 - e * 38] as Pt,
+      knee: [side * (10.5 - e * 1.5), -52 - e * 10] as Pt,
+      foot: [side * (9.5 - e * 3), -5 - e * 46] as Pt,
       sole: e > 0.35,
     };
   };
@@ -357,66 +404,74 @@ export const runBack = (phase: number, withBall = true): Rig => {
   r.footR = R.foot;
   r.soleR = R.sole;
   // free arm pumps
-  r.elbowL = [-42, -102 + 6 * s];
-  r.handL = [-36 - 4 * s, -84 + 20 * s];
+  r.elbowL = [-29, -121 + 5 * s];
+  r.handL = [-25 - 3 * s, -97 + 16 * s];
   if (withBall) {
-    r.elbowR = [42, -100];
-    r.handR = [30, -90];
-    r.ball = {x: 40, y: -98, rot: -28};
+    r.elbowR = [29, -121];
+    r.handR = [19, -110];
+    r.ball = {x: 28, y: -117, rot: -28};
   } else {
-    r.elbowR = [42, -102 - 6 * s];
-    r.handR = [36 + 4 * s, -84 - 20 * s];
+    r.elbowR = [29, -121 - 5 * s];
+    r.handR = [25 + 3 * s, -97 - 16 * s];
   }
   return r;
 };
 
-// Standing ready, ball under arm. bounce 0..1
+// Standing ready. bounce 0..1
 export const standBack = (bounce: number, withBall = true): Rig => {
   const r = runBack(0, withBall);
-  const k = bounce * 4;
-  r.kneeL = [-18, -32 + k];
-  r.kneeR = [18, -32 + k];
-  r.footL = [-19, -3];
-  r.footR = [19, -3];
+  const k = bounce * 3;
+  r.kneeL = [-12, -52 + k];
+  r.kneeR = [12, -52 + k];
+  r.footL = [-12.5, -5];
+  r.footR = [12.5, -5];
   r.soleL = false;
   r.soleR = false;
-  r.elbowL = [-42, -100];
-  r.handL = [-38, -80];
+  r.elbowL = [-28, -119];
+  r.handL = [-27, -92];
   return r;
 };
 
 // Back view conversion kick. k: 0 = leg cocked, 0.35 = contact, 1 = full follow-through.
 export const kickBack = (k: number): Rig => {
   const r = base();
-  r.footL = [-12, -3];
-  r.kneeL = [-16, -32];
+  r.footL = [-8, -5];
+  r.kneeL = [-10, -52];
   if (k < 0.35) {
     const u = k / 0.35;
-    r.kneeR = [18, -34 - (1 - u) * 6];
-    r.footR = [16, -3 - (1 - u) * 40];
+    r.kneeR = [12, -54 - (1 - u) * 6];
+    r.footR = [11, -5 - (1 - u) * 44];
     r.soleR = u < 0.6;
   } else {
     const u = Math.min(1, (k - 0.35) / 0.65);
     const e = 1 - Math.pow(1 - u, 2);
     r.legRBehind = true;
-    r.hipR = [14, -64];
-    r.kneeR = [22 + e * 26, -40 - e * 40];
-    r.footR = [26 + e * 52, -12 - e * 104];
+    r.kneeR = [12 + e * 16, -54 - e * 30];
+    r.footR = [14 + e * 37, -10 - e * 100];
   }
-  r.elbowL = [-60, -118];
-  r.handL = [-82, -120];
-  r.elbowR = [56, -106];
-  r.handR = [70, -96];
+  r.elbowL = [-44, -138];
+  r.handL = [-62, -141];
+  r.elbowR = [40, -128];
+  r.handR = [51, -114];
   return r;
 };
 
-// Arms up in the air. lift 0..1 blends from hanging to full V.
+// Arms up in the air. lift 0..1 blends from hanging to a full V.
 export const armsUp = (r: Rig, lift: number): Rig => {
   const l = lift;
-  r.elbowL = [-40 - 10 * l, -100 - 56 * l];
-  r.handL = [-40 - 18 * l, -78 - 116 * l];
-  r.elbowR = [40 + 10 * l, -100 - 56 * l];
-  r.handR = [40 + 18 * l, -78 - 116 * l];
+  r.elbowL = [-27 - 8 * l, -118 - 56 * l];
+  r.handL = [-28 - 17 * l, -91 - 109 * l];
+  r.elbowR = [27 + 8 * l, -118 - 56 * l];
+  r.handR = [28 + 17 * l, -91 - 109 * l];
+  return r;
+};
+
+// Both arms flung up and forward: a defender diving at thin air.
+export const reachUp = (r: Rig): Rig => {
+  r.elbowL = [-20, -175];
+  r.handL = [-16, -203];
+  r.elbowR = [20, -175];
+  r.handR = [16, -203];
   return r;
 };
 
@@ -428,8 +483,8 @@ export const runFront = (phase: number, armsOut = 1): Rig => {
     const l = Math.max(0, side * s);
     const e = l * l * (3 - 2 * l);
     return {
-      knee: [side * (15 - e * 2), -32 - e * 24] as Pt,
-      foot: [side * (14 - e * 2), -3 - e * 26] as Pt,
+      knee: [side * (10.5 - e), -52 - e * 22] as Pt,
+      foot: [side * 10, -5 - e * 24] as Pt,
     };
   };
   const L = leg(-1);
@@ -439,23 +494,23 @@ export const runFront = (phase: number, armsOut = 1): Rig => {
   r.kneeR = R.knee;
   r.footR = R.foot;
   const a = armsOut;
-  r.elbowL = [-42 - 12 * a, -102 - 6 * a + 5 * s];
-  r.handL = [-40 - 26 * a, -80 - 6 * a - 10 * s];
-  r.elbowR = [42 + 12 * a, -102 - 6 * a - 5 * s];
-  r.handR = [40 + 26 * a, -80 - 6 * a + 10 * s];
+  r.elbowL = [-30 - 10 * a, -121 - 4 * a + 4 * s];
+  r.handL = [-30 - 22 * a, -98 - 6 * a - 8 * s];
+  r.elbowR = [30 + 10 * a, -121 - 4 * a - 4 * s];
+  r.handR = [30 + 22 * a, -98 - 6 * a + 8 * s];
   return r;
 };
 
-// Front view, standing with knees bent. crouch 0..1
+// Front view, standing with knees a little bent. crouch 0..1
 export const standFront = (crouch: number): Rig => {
   const r = base();
-  r.kneeL = [-20, -32 + crouch * 5];
-  r.kneeR = [20, -32 + crouch * 5];
-  r.footL = [-20, -3];
-  r.footR = [20, -3];
-  r.elbowL = [-50, -106];
-  r.handL = [-62, -92];
-  r.elbowR = [50, -106];
-  r.handR = [62, -92];
+  r.kneeL = [-13, -52 + crouch * 3];
+  r.kneeR = [13, -52 + crouch * 3];
+  r.footL = [-13, -5];
+  r.footR = [13, -5];
+  r.elbowL = [-35, -123];
+  r.handL = [-44, -110];
+  r.elbowR = [35, -123];
+  r.handR = [44, -110];
   return r;
 };
