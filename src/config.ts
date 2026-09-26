@@ -11,6 +11,7 @@ export const VIDEO = {
   durationInFrames: 450, // 15s
 };
 
+// ── Clip 1: the try (15s) ────────────────────────────────────
 export const TIMING = {
   // 0 to 1s: establish the pitch and the scoreboard
   establishEnd: 1.0, // camera swoop finishes, player sets off
@@ -59,6 +60,47 @@ export const TIMING = {
 
   // shared
   scoreTickStep: 0.08, // gap between each number as the score counts up
+};
+
+// ── Clip 2: drop goal (8s) ────────────────────────────────────
+export const DROP_GOAL = {
+  durationInFrames: 240,
+  startScore: 0, // set to 7 or 10 if you stitch the clips into one match
+  spotX: 4, // metres right of the posts
+  distance: 25, // metres out from the try line
+  passAt: 0.5, // scrum-half's pass comes in from the left
+  catchAt: 1.0,
+  dropAt: 1.45, // ball leaves the hands...
+  kickAt: 1.7, // ...bounces, and is struck on the half-volley
+  chargeAt: 1.55, // defender leaps for the charge-down
+  ballOverPosts: 2.7,
+  ballLands: 3.45,
+  flagsUp: 2.8, // touch judges raise their flags
+  wordIn: 2.8, // "DROP GOAL"
+  pointsIn: 3.0, // "+3"
+  scoreStart: 3.15,
+  pulseStart: 3.5,
+  pulseEnd: 4.6,
+  endHoldStart: 7.0, // last second is a still frame
+};
+
+// ── Clip 3: penalty kick (8s) ─────────────────────────────────
+export const PENALTY = {
+  durationInFrames: 240,
+  startScore: 0,
+  spotX: -9, // metres left of the posts
+  distance: 32, // metres out from the try line
+  runUpStart: 0.9,
+  kickAt: 1.75,
+  ballOverPosts: 3.0,
+  ballLands: 3.8,
+  flagsUp: 3.1,
+  wordIn: 3.1, // "PENALTY"
+  pointsIn: 3.3, // "+3"
+  scoreStart: 3.45,
+  pulseStart: 3.8,
+  pulseEnd: 4.9,
+  endHoldStart: 7.0,
 };
 
 // Palette, taken from the player reference sheet.
@@ -137,6 +179,22 @@ export const KITS = {
     skinShade: '#7C5134',
     hair: PALETTE.kit,
     number: '7',
+  },
+  official: {
+    shirt: PALETTE.accent,
+    shirtLit: '#C4F25A',
+    shirtShade: '#7FAE14',
+    collar: PALETTE.kit,
+    numberColor: PALETTE.kit,
+    shorts: PALETTE.kit,
+    shortsShade: '#050607',
+    socks: PALETTE.kit,
+    sockHoop: PALETTE.accent,
+    band: PALETTE.kit,
+    skin: '#C08A62',
+    skinShade: '#A06E48',
+    hair: PALETTE.kit,
+    number: '',
   },
   away2: {
     shirt: PALETTE.white,

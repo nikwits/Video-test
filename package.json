@@ -6,7 +6,10 @@
   "scripts": {
     "studio": "remotion studio",
     "stills": "node scripts/stills.mjs",
-    "render": "remotion render src/index.ts RugbyTry out/rugby-try.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell"
+    "render": "remotion render src/index.ts RugbyTry out/rugby-try.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
+    "render:drop-goal": "remotion render src/index.ts DropGoal out/drop-goal.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
+    "render:penalty": "remotion render src/index.ts PenaltyKick out/penalty-kick.mp4 --browser-executable=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell",
+    "render:all": "npm run render && npm run render:drop-goal && npm run render:penalty"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.529",

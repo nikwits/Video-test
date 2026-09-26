@@ -514,3 +514,31 @@ export const standFront = (crouch: number): Rig => {
   r.handR = [44, -110];
   return r;
 };
+
+// Hands on head: the "how did that go over" look.
+export const handsOnHead = (r: Rig): Rig => {
+  r.elbowL = [-34, -168];
+  r.handL = [-12, -186];
+  r.elbowR = [34, -168];
+  r.handR = [12, -186];
+  return r;
+};
+
+// Back view, ball held out in front at the right, ready to drop.
+export const holdBallBack = (r: Rig): Rig => {
+  r.elbowL = [-26, -120];
+  r.handL = [-10, -106];
+  r.elbowR = [30, -118];
+  r.handR = [24, -100];
+  r.ball = {x: 28, y: -104, rot: -70};
+  return r;
+};
+
+// Back view, left arm out calling for the pass.
+export const callForBall = (r: Rig, reach: number): Rig => {
+  r.elbowL = [-27 - 14 * reach, -118 - 8 * reach];
+  r.handL = [-28 - 30 * reach, -91 - 22 * reach];
+  r.elbowR = [30, -120];
+  r.handR = [22, -106];
+  return r;
+};

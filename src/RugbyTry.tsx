@@ -1,8 +1,7 @@
 import React from 'react';
-import {AbsoluteFill, Easing, interpolate, spring, useCurrentFrame} from 'remotion';
-import {BALL_SCALE, CHAR_SCALE, COLORS, KITS, PITCH, TIMING as T, VIDEO} from './config';
+import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from 'remotion';
+import {COLORS, KITS, PITCH, TIMING as T, VIDEO} from './config';
 import {Camera, Vec3, groundLine, lerpCam, polyPath, project, vanishingPoint} from './engine/camera';
-import {BallShape} from './characters/Ball';
 import {
   Character,
   Expression,
@@ -19,53 +18,10 @@ import {DIVER_LENGTH, Diver} from './characters/Diver';
 import {Backdrop, Posts, Vignette} from './scene/World';
 import {Confetti, Dust, Impact, Sparkle, SpeedLines, Wipe} from './scene/Effects';
 import {Headline, Scoreboard, Tag} from './scene/Hud';
-
-// ── helpers ──────────────────────────────────────────────────
-const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
-const ease = (t: number, t0: number, t1: number, v0: number, v1: number, e: (x: number) => number = Easing.inOut(Easing.cubic)) =>
-  interpolate(t, [t0, t1], [v0, v1], {...clamp, easing: e});
-const bump = (t: number, t0: number, t1: number) => (t <= t0 || t >= t1 ? 0 : Math.sin(((t - t0) / (t1 - t0)) * Math.PI));
-const UNIT = CHAR_SCALE / 100; // metres per sprite unit
-const BALL_UNIT = (0.29 * BALL_SCALE) / 38; // metres per ball-sprite unit
-const FLIGHT_BOOST = 2.5; // ball drawn bigger in the air so it reads at a distance
+import {Drawable, UNIT, bump, clamp, ease, kickedBall, makeKick, popIn, renderSorted, shadow, sprite, tee} from './scene/stage';
 
 const SWAP_TO_CONVERSION = T.wipeToConversion + T.wipeDuration / 2;
 const SWAP_TO_CELEBRATION = T.wipeToCelebration + T.wipeDuration / 2;
-
-type Drawable = {depth: number; node: React.ReactNode};
-
-// A sprite standing at a world position, scaled by perspective.
-const sprite = (
-  key: string,
-  pos: Vec3,
-  cam: Camera,
-  node: React.ReactNode,
-  opts: {rotate?: number; sx?: number; sy?: number} = {},
-): Drawable => {
-  const p = project(pos, cam);
-  const k = p.s * UNIT;
-  const {rotate = 0, sx = 1, sy = 1} = opts;
-  return {
-    depth: p.depth,
-    node: (
-      <g key={key} transform={`translate(${p.x},${p.y}) rotate(${rotate}) scale(${k * sx},${k * sy})`}>
-        {node}
-      </g>
-    ),
-  };
-};
-
-const shadow = (key: string, x: number, z: number, cam: Camera, r = 0.55, opacity = 0.28) => {
-  const pts: Vec3[] = [];
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    pts.push({x: x + Math.cos(a) * r, y: 0, z: z + Math.sin(a) * r * 0.55});
-  }
-  return <path key={key} d={polyPath(pts, cam)} fill="#0B3D0B" opacity={opacity} />;
-};
-
-const renderSorted = (items: Drawable[]) =>
-  [...items].sort((a, b) => b.depth - a.depth).map((d) => d.node);
 
 // ── the run & try: player motion ─────────────────────────────
 const RUN_END_Z = 37.6;
@@ -305,39 +261,16 @@ const RunScene: React.FC<{t: number}> = ({t}) => {
 // ── Scene 2: conversion ──────────────────────────────────────
 const TRY_SPOT_Z = hipZ(T.diveLand + 1) - DIVER_HIP + DIVER_M; // where the ball went down
 const TEE: Vec3 = {x: PITCH.tryX, y: 0, z: PITCH.tryLineZ - PITCH.conversionDistance};
-const AIM = {x: 0 - TEE.x, z: PITCH.tryLineZ - TEE.z};
-const AIM_LEN = Math.hypot(AIM.x, AIM.z);
-const DIR = {x: AIM.x / AIM_LEN, z: AIM.z / AIM_LEN};
-const RIGHT = {x: DIR.z, z: -DIR.x};
-const YAW = Math.atan2(AIM.x, AIM.z);
-const FLIGHT_LEN = AIM_LEN + 10.5; // lands in the in-goal, well past the posts
-const CROSS_S = AIM_LEN / FLIGHT_LEN;
-const CROSS_H = 6.4; // height as it crosses the posts (crossbar is 3m)
-const APEX = CROSS_H / (4 * CROSS_S * (1 - CROSS_S));
-// Ease-out flight that crosses the posts exactly at T.ballOverPosts.
-const FLIGHT_P = Math.log(1 - CROSS_S) / Math.log(1 - (T.ballOverPosts - T.kickAt) / (T.ballLands - T.kickAt));
-const flightS = (t: number) => {
-  const u = Math.max(0, Math.min(1, (t - T.kickAt) / (T.ballLands - T.kickAt)));
-  return 1 - Math.pow(1 - u, FLIGHT_P);
-};
-const BALL_REST_Y = 0.17;
-const ballPos = (t: number): Vec3 => {
-  const after = t - T.ballLands;
-  if (after > 0) {
-    // one lazy bounce, then it rolls to a stop
-    const u = Math.min(1, after / 0.45);
-    const d = FLIGHT_LEN + ease(after, 0, 0.7, 0, 2.4, Easing.out(Easing.quad));
-    return {x: TEE.x + DIR.x * d, y: BALL_REST_Y + 0.8 * 4 * u * (1 - u), z: TEE.z + DIR.z * d};
-  }
-  const s = flightS(t);
-  const d = s * FLIGHT_LEN;
-  return {x: TEE.x + DIR.x * d, y: 0.34 * (1 - s) + BALL_REST_Y * s + 4 * APEX * s * (1 - s), z: TEE.z + DIR.z * d};
-};
-const at = (along: number, side: number): Vec3 => ({
-  x: TEE.x + DIR.x * along + RIGHT.x * side,
-  y: 0,
-  z: TEE.z + DIR.z * along + RIGHT.z * side,
+const CONVERSION = makeKick({
+  spot: TEE,
+  startY: 0.34,
+  crossH: 6.4,
+  pastPosts: 10.5, // lands in the in-goal, well past the posts
+  kickAt: T.kickAt,
+  overPosts: T.ballOverPosts,
+  lands: T.ballLands,
 });
+const at = CONVERSION.at;
 
 const conversionCamera = (t: number): Camera => {
   const push = ease(t, T.kickAt + 0.05, T.ballOverPosts + 0.25, 0, 7.5, Easing.inOut(Easing.cubic));
@@ -346,7 +279,7 @@ const conversionCamera = (t: number): Camera => {
   const settle = ease(t, SWAP_TO_CONVERSION, SWAP_TO_CONVERSION + 0.6, 1, 0, Easing.out(Easing.cubic));
   const back = 10 - push + settle * 2.5;
   const p = at(-back, -0.35);
-  return {x: p.x, y: 2.7 + rise + settle * 1.2, z: p.z, yaw: YAW, pitch: 0.04 - tilt + settle * 0.06, focal: 1600, cx: 540, cy: 1010};
+  return {x: p.x, y: 2.7 + rise + settle * 1.2, z: p.z, yaw: CONVERSION.yaw, pitch: 0.04 - tilt + settle * 0.06, focal: 1600, cx: 540, cy: 1010};
 };
 
 const ConversionScene: React.FC<{t: number}> = ({t}) => {
@@ -372,44 +305,12 @@ const ConversionScene: React.FC<{t: number}> = ({t}) => {
   }
   const spotPulse = 1 + 0.15 * Math.sin(t * 8);
 
-  // tee
-  const teeP = project({x: TEE.x, y: 0, z: TEE.z}, cam);
-  items.push({
-    depth: teeP.depth + 0.05,
-    node: (
-      <g key="tee" transform={`translate(${teeP.x},${teeP.y}) scale(${teeP.s * UNIT})`}>
-        <path d="M-16,0 L-8,-18 L8,-18 L16,0 Z" fill={COLORS.tee} stroke={COLORS.outline} strokeWidth={1.2} strokeLinejoin="round" />
-      </g>
-    ),
-  });
+  items.push(tee(TEE, cam));
 
   // ball: on the tee, then flying
   const flying = t >= T.kickAt;
-  const bp = flying ? ballPos(t) : {x: TEE.x, y: 0.34, z: TEE.z};
-  const b = project(bp, cam);
-  const bk = b.s * BALL_UNIT * (flying ? interpolate(t, [T.kickAt, T.kickAt + 0.25], [1, FLIGHT_BOOST], {...clamp, easing: Easing.out(Easing.quad)}) : 1);
-  const spin = flying ? flightS(t) * 1350 + ease(t, T.ballLands, T.ballLands + 0.6, 0, 180, Easing.out(Easing.quad)) : 0;
-  // trail
-  const trail: React.ReactNode[] = [];
-  if (flying) {
-    for (let i = 1; i <= 14; i++) {
-      const tt = t - i * 0.028;
-      if (tt < T.kickAt) break;
-      const q = project(ballPos(tt), cam);
-      trail.push(<circle key={i} cx={q.x} cy={q.y} r={Math.max(5, q.s * 0.14) * (1 - i / 20)} fill="#FFFFFF" opacity={0.6 * (1 - i / 15)} />);
-    }
-  }
-  items.push({
-    depth: b.depth,
-    node: (
-      <g key="ball">
-        {trail}
-        <g transform={`translate(${b.x},${b.y}) rotate(${-90 + spin}) scale(${bk})`}>
-          <BallShape outline={1.6 / Math.max(0.5, Math.min(2, bk))} />
-        </g>
-      </g>
-    ),
-  });
+  const bp = flying ? CONVERSION.ballPos(t) : {x: TEE.x, y: 0.34, z: TEE.z};
+  items.push(kickedBall(CONVERSION, t, cam, {x: TEE.x, y: 0.34, z: TEE.z}));
   shadows.push(shadow('bs', bp.x, bp.z, cam, 0.25, flying ? 0.18 : 0.25));
 
   // kicker
@@ -521,9 +422,6 @@ const CelebrationScene: React.FC<{t: number}> = ({t}) => {
 };
 
 // ── Overlays ─────────────────────────────────────────────────
-const popIn = (frame: number, at: number, damping = 9) =>
-  spring({frame: frame - at * VIDEO.fps, fps: VIDEO.fps, config: {damping, stiffness: 170, mass: 0.8}});
-
 export const RugbyTry: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame / VIDEO.fps;
