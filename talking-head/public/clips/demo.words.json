@@ -1,0 +1,592 @@
+[
+ {
+  "word": "Most",
+  "start": 1.3,
+  "end": 1.636
+ },
+ {
+  "word": "AI",
+  "start": 1.663,
+  "end": 1.936
+ },
+ {
+  "word": "projects",
+  "start": 1.959,
+  "end": 2.492
+ },
+ {
+  "word": "don't",
+  "start": 2.53,
+  "end": 2.89
+ },
+ {
+  "word": "fail",
+  "start": 2.935,
+  "end": 3.248
+ },
+ {
+  "word": "because",
+  "start": 3.29,
+  "end": 3.741
+ },
+ {
+  "word": "of",
+  "start": 3.765,
+  "end": 4.019
+ },
+ {
+  "word": "the",
+  "start": 4.08,
+  "end": 4.355
+ },
+ {
+  "word": "tech.",
+  "start": 4.386,
+  "end": 4.747
+ },
+ {
+  "word": "They",
+  "start": 5.797,
+  "end": 6.139
+ },
+ {
+  "word": "fail",
+  "start": 6.207,
+  "end": 6.521
+ },
+ {
+  "word": "because",
+  "start": 6.584,
+  "end": 7.052
+ },
+ {
+  "word": "nobody",
+  "start": 7.079,
+  "end": 7.489
+ },
+ {
+  "word": "changed",
+  "start": 7.524,
+  "end": 8.035
+ },
+ {
+  "word": "how",
+  "start": 8.064,
+  "end": 8.375
+ },
+ {
+  "word": "the",
+  "start": 8.427,
+  "end": 8.722
+ },
+ {
+  "word": "work",
+  "start": 8.769,
+  "end": 9.084
+ },
+ {
+  "word": "actually",
+  "start": 9.107,
+  "end": 9.614
+ },
+ {
+  "word": "gets",
+  "start": 9.668,
+  "end": 10.012
+ },
+ {
+  "word": "done.",
+  "start": 10.048,
+  "end": 10.405
+ },
+ {
+  "word": "We",
+  "start": 11.222,
+  "end": 11.506
+ },
+ {
+  "word": "looked",
+  "start": 11.561,
+  "end": 11.98
+ },
+ {
+  "word": "at",
+  "start": 12.029,
+  "end": 12.291
+ },
+ {
+  "word": "forty",
+  "start": 12.355,
+  "end": 12.768
+ },
+ {
+  "word": "We",
+  "start": 13.902,
+  "end": 14.201
+ },
+ {
+  "word": "looked",
+  "start": 14.227,
+  "end": 14.66
+ },
+ {
+  "word": "at",
+  "start": 14.718,
+  "end": 14.95
+ },
+ {
+  "word": "40",
+  "start": 14.995,
+  "end": 15.218
+ },
+ {
+  "word": "pilots",
+  "start": 15.271,
+  "end": 15.732
+ },
+ {
+  "word": "last",
+  "start": 15.781,
+  "end": 16.161
+ },
+ {
+  "word": "year.",
+  "start": 16.197,
+  "end": 16.562
+ },
+ {
+  "word": "Only",
+  "start": 17.597,
+  "end": 17.943
+ },
+ {
+  "word": "6",
+  "start": 18.005,
+  "end": 18.256
+ },
+ {
+  "word": "made",
+  "start": 18.3,
+  "end": 18.663
+ },
+ {
+  "word": "it",
+  "start": 18.686,
+  "end": 18.962
+ },
+ {
+  "word": "into",
+  "start": 19.014,
+  "end": 19.404
+ },
+ {
+  "word": "daily",
+  "start": 19.465,
+  "end": 19.843
+ },
+ {
+  "word": "use.",
+  "start": 19.882,
+  "end": 20.2
+ },
+ {
+  "word": "That's",
+  "start": 21.118,
+  "end": 21.531
+ },
+ {
+  "word": "15%.",
+  "start": 21.557,
+  "end": 21.782
+ },
+ {
+  "word": "So",
+  "start": 22.487,
+  "end": 22.727
+ },
+ {
+  "word": "here's",
+  "start": 22.767,
+  "end": 23.236
+ },
+ {
+  "word": "the",
+  "start": 23.26,
+  "end": 23.561
+ },
+ {
+  "word": "question.",
+  "start": 23.609,
+  "end": 24.169
+ },
+ {
+  "word": "Why",
+  "start": 25.428,
+  "end": 25.716
+ },
+ {
+  "word": "are",
+  "start": 25.756,
+  "end": 26.05
+ },
+ {
+  "word": "we",
+  "start": 26.114,
+  "end": 26.411
+ },
+ {
+  "word": "still",
+  "start": 26.438,
+  "end": 26.808
+ },
+ {
+  "word": "judging",
+  "start": 26.839,
+  "end": 27.303
+ },
+ {
+  "word": "AI",
+  "start": 27.347,
+  "end": 27.614
+ },
+ {
+  "word": "by",
+  "start": 27.647,
+  "end": 27.868
+ },
+ {
+  "word": "how",
+  "start": 27.909,
+  "end": 28.203
+ },
+ {
+  "word": "clever",
+  "start": 28.251,
+  "end": 28.728
+ },
+ {
+  "word": "the",
+  "start": 28.782,
+  "end": 29.089
+ },
+ {
+  "word": "demo",
+  "start": 29.139,
+  "end": 29.503
+ },
+ {
+  "word": "looks?",
+  "start": 29.526,
+  "end": 29.953
+ },
+ {
+  "word": "The",
+  "start": 31.218,
+  "end": 31.547
+ },
+ {
+  "word": "demo",
+  "start": 31.586,
+  "end": 31.928
+ },
+ {
+  "word": "is",
+  "start": 31.954,
+  "end": 32.224
+ },
+ {
+  "word": "the",
+  "start": 32.247,
+  "end": 32.518
+ },
+ {
+  "word": "easy",
+  "start": 32.548,
+  "end": 32.871
+ },
+ {
+  "word": "part.",
+  "start": 32.908,
+  "end": 33.222
+ },
+ {
+  "word": "The",
+  "start": 33.906,
+  "end": 34.179
+ },
+ {
+  "word": "hard",
+  "start": 34.217,
+  "end": 34.529
+ },
+ {
+  "word": "part",
+  "start": 34.593,
+  "end": 34.952
+ },
+ {
+  "word": "is",
+  "start": 34.98,
+  "end": 35.22
+ },
+ {
+  "word": "getting",
+  "start": 35.257,
+  "end": 35.731
+ },
+ {
+  "word": "a",
+  "start": 35.757,
+  "end": 36.0
+ },
+ {
+  "word": "team",
+  "start": 36.07,
+  "end": 36.417
+ },
+ {
+  "word": "of",
+  "start": 36.461,
+  "end": 36.688
+ },
+ {
+  "word": "twelve",
+  "start": 36.713,
+  "end": 37.141
+ },
+ {
+  "word": "people",
+  "start": 37.174,
+  "end": 37.64
+ },
+ {
+  "word": "to",
+  "start": 37.668,
+  "end": 37.89
+ },
+ {
+  "word": "trust",
+  "start": 37.958,
+  "end": 38.355
+ },
+ {
+  "word": "it,",
+  "start": 38.382,
+  "end": 38.646
+ },
+ {
+  "word": "on",
+  "start": 38.947,
+  "end": 39.209
+ },
+ {
+  "word": "a",
+  "start": 39.278,
+  "end": 39.522
+ },
+ {
+  "word": "wet",
+  "start": 39.577,
+  "end": 39.863
+ },
+ {
+  "word": "Tuesday",
+  "start": 39.901,
+  "end": 40.36
+ },
+ {
+  "word": "afternoon.",
+  "start": 40.418,
+  "end": 40.996
+ },
+ {
+  "word": "When",
+  "start": 41.852,
+  "end": 42.18
+ },
+ {
+  "word": "one",
+  "start": 42.241,
+  "end": 42.584
+ },
+ {
+  "word": "client",
+  "start": 42.647,
+  "end": 43.112
+ },
+ {
+  "word": "did",
+  "start": 43.172,
+  "end": 43.497
+ },
+ {
+  "word": "that",
+  "start": 43.528,
+  "end": 43.879
+ },
+ {
+  "word": "properly,",
+  "start": 43.917,
+  "end": 44.41
+ },
+ {
+  "word": "they",
+  "start": 44.711,
+  "end": 45.043
+ },
+ {
+  "word": "got",
+  "start": 45.076,
+  "end": 45.397
+ },
+ {
+  "word": "back",
+  "start": 45.464,
+  "end": 45.81
+ },
+ {
+  "word": "3",
+  "start": 45.877,
+  "end": 46.131
+ },
+ {
+  "word": "hours",
+  "start": 46.199,
+  "end": 46.583
+ },
+ {
+  "word": "per",
+  "start": 46.614,
+  "end": 46.897
+ },
+ {
+  "word": "person,",
+  "start": 46.927,
+  "end": 47.343
+ },
+ {
+  "word": "per",
+  "start": 47.675,
+  "end": 48.012
+ },
+ {
+  "word": "week.",
+  "start": 48.074,
+  "end": 48.422
+ },
+ {
+  "word": "That's",
+  "start": 49.624,
+  "end": 50.031
+ },
+ {
+  "word": "the",
+  "start": 50.084,
+  "end": 50.422
+ },
+ {
+  "word": "stuff",
+  "start": 50.481,
+  "end": 50.896
+ },
+ {
+  "word": "that",
+  "start": 50.94,
+  "end": 51.264
+ },
+ {
+  "word": "compounds.",
+  "start": 51.324,
+  "end": 51.885
+ },
+ {
+  "word": "Stop",
+  "start": 53.224,
+  "end": 53.566
+ },
+ {
+  "word": "buying",
+  "start": 53.606,
+  "end": 54.082
+ },
+ {
+  "word": "tools.",
+  "start": 54.138,
+  "end": 54.506
+ },
+ {
+  "word": "Start",
+  "start": 55.196,
+  "end": 55.624
+ },
+ {
+  "word": "changing",
+  "start": 55.684,
+  "end": 56.186
+ },
+ {
+  "word": "habits.",
+  "start": 56.247,
+  "end": 56.725
+ },
+ {
+  "word": "If",
+  "start": 57.591,
+  "end": 57.855
+ },
+ {
+  "word": "you",
+  "start": 57.881,
+  "end": 58.148
+ },
+ {
+  "word": "want",
+  "start": 58.216,
+  "end": 58.578
+ },
+ {
+  "word": "help",
+  "start": 58.624,
+  "end": 59.009
+ },
+ {
+  "word": "with",
+  "start": 59.051,
+  "end": 59.431
+ },
+ {
+  "word": "that,",
+  "start": 59.492,
+  "end": 59.819
+ },
+ {
+  "word": "you",
+  "start": 60.131,
+  "end": 60.42
+ },
+ {
+  "word": "know",
+  "start": 60.452,
+  "end": 60.809
+ },
+ {
+  "word": "where",
+  "start": 60.842,
+  "end": 61.23
+ },
+ {
+  "word": "to",
+  "start": 61.257,
+  "end": 61.55
+ },
+ {
+  "word": "find",
+  "start": 61.587,
+  "end": 61.934
+ },
+ {
+  "word": "us.",
+  "start": 61.983,
+  "end": 62.275
+ }
+]

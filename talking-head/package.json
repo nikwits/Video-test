@@ -1,0 +1,35 @@
+{
+  "name": "wits-watts-talking-head",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Captioned 16:9 talking-head clips in the Wits + Watts style, built with Remotion",
+  "type": "module",
+  "scripts": {
+    "transcribe": "node scripts/transcribe.mjs",
+    "plan": "node scripts/plan.ts",
+    "render": "node scripts/render.mjs",
+    "make": "node scripts/make.mjs",
+    "demo": "node scripts/demo.mjs",
+    "studio": "remotion studio",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/spectral": "^5.3.0",
+    "@remotion/cli": "^4.0.529",
+    "@remotion/fonts": "^4.0.529",
+    "@remotion/install-whisper-cpp": "^4.0.529",
+    "@remotion/media-utils": "^4.0.529",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.529"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/react": "^18.3.31",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

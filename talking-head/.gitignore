@@ -1,0 +1,9 @@
+node_modules/
+out/
+.cache/
+.whisper/
+# Footage stays local. Transcripts and edit files are small, so they can be committed if you want.
+public/clips/*.mp4
+public/clips/*.mov
+public/clips/*.m4v
+public/clips/*.wav

@@ -1,5 +1,7 @@
 # Rugby Scoring Clips
 
+> Also in this repo: `talking-head/`, a separate Remotion project for Wits + Watts captioned talking-head clips. See `talking-head/README.md`.
+
 Five 9:16 clips (an intro, the four ways to score, and a recap) for rugby union, in a premium editorial 2D style (night match, all-black home kit). Everything is drawn in code (React + SVG in Remotion). There are no image, video or audio files.
 
 | Clip | Composition | Output | Length |
