@@ -436,10 +436,11 @@ export const RugbyTry: React.FC = () => {
   const tryPop = popIn(frame, T.tryTextIn, 13);
   const fivePop = popIn(frame, T.plusFiveIn, 12);
   const underline = ease(t, T.tryTextIn + 0.1, T.tryTextIn + 0.45, 0, 1, Easing.out(Easing.cubic));
-  // +2 near the posts
-  const showTwo = t >= T.plusTwoIn && t < SWAP_TO_CELEBRATION;
+  // CONVERSION +2, over the posts
+  const showConversion = t >= T.conversionTextIn && t < SWAP_TO_CELEBRATION;
+  const conversionPop = popIn(frame, T.conversionTextIn, 13);
+  const conversionUnderline = ease(t, T.conversionTextIn + 0.1, T.conversionTextIn + 0.45, 0, 1, Easing.out(Easing.cubic));
   const twoPop = popIn(frame, T.plusTwoIn, 12);
-  const twoRise = ease(t, T.plusTwoIn, T.plusTwoIn + 0.6, 0, -40, Easing.out(Easing.cubic));
 
   // scoreboard pulse on 7
   const pu = (t - T.pulseStart) / (T.pulseEnd - T.pulseStart);
@@ -471,9 +472,10 @@ export const RugbyTry: React.FC = () => {
             {t >= T.plusFiveIn && <Tag text="+5" x={540} y={790} size={84} scale={fivePop} />}
           </g>
         )}
-        {showTwo && (
+        {showConversion && (
           <g>
-            <Tag text="+2" x={540} y={560 + twoRise} size={96} scale={twoPop} />
+            <Headline text="CONVERSION" x={540} y={540} size={134} fill={COLORS.accent} scale={conversionPop} underline={conversionUnderline} />
+            {t >= T.plusTwoIn && <Tag text="+2" x={540} y={740} size={84} scale={twoPop} />}
           </g>
         )}
 

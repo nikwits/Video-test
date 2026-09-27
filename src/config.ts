@@ -46,8 +46,9 @@ export const TIMING = {
   kickAt: 10.25, // boot meets ball
   ballOverPosts: 10.95, // ball crosses the posts (between them, above the bar)
   ballLands: 11.75,
-  plusTwoIn: 11.0,
-  scoreToSevenStart: 11.2,
+  conversionTextIn: 11.0, // "CONVERSION"
+  plusTwoIn: 11.2,
+  scoreToSevenStart: 11.35,
 
   // 12 to 15s: celebrate and hold
   wipeToCelebration: 11.85,
